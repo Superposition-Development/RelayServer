@@ -3,3 +3,4 @@ import os
 load_dotenv()
 SERVER_NAME = "Relay Server"
 DATABASE_NAME = os.getenv("DATABASE_NAME")
+JWT_KEY = os.getenv("JWT_KEY")
