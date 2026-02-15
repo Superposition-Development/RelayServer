@@ -1,10 +1,9 @@
 from flask import Flask, request, jsonify
-import sqlite3
 import init
 from init import app, cors
-import crypt
-
-connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
+import database
+import AuthKeyGen
+from AuthKeyGen import token_required
 
 @app.before_request
 def before_request(): 
@@ -17,10 +16,28 @@ def home():
     return "eventually lets put something cool here"
 
 @app.route("/test",methods=["POST"])
+@token_required
 def test():
 
     data = request.get_json()
     
     return data
 
-app.run(port=8080)
+#TODO: sanitize userID
+@app.route("/signup",methods=["POST"])
+def signup():
+    data = request.get_json()
+    if(database.queryUser(data["userID"]) != None):
+         return jsonify({"Error":"UserID taken"})
+    database.
+    return jsonify(AuthKeyGen.encryptJWT(
+        {
+            "userID":data["userID"]
+    },1))
+
+
+def run():
+    # print(database.testUser())
+    app.run(port=8080)
+
+run()

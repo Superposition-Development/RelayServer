@@ -3,9 +3,9 @@ from flask import Flask
 from flask_cors import CORS
 import os
 load_dotenv()
-SERVER_NAME = "Relay Server"
+SERVER_NAME = os.getenv("SERVER_NAME")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
-JWT_KEY = os.getenv("JWT_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 app = Flask(SERVER_NAME)
 cors = CORS(app=app,supports_credentials=True)
