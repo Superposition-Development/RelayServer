@@ -18,6 +18,8 @@ def decryptJWT(token):
         status = {"Result":jwt.decode(jwt=token,key=secretKey,algorithms=["HS256"])}
     except jwt.ExpiredSignatureError:
         status = {"Error":"JWT expired"}
+    except jwt.InvalidSignatureError:
+        status = {"Error":"https://tenor.com/view/i-know-gif-3951224689799851379"}
     return status
 
 def token_required(f):

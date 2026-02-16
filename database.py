@@ -1,5 +1,6 @@
 import sqlite3
 import init
+import datetime
 
 def initialize():
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
@@ -11,33 +12,35 @@ def initialize():
         pfp TEXT,
         username TEXT,
         userID TEXT UNIQUE,
-        password TEXT
+        password TEXT,
+        joindate DATE
     )
     """)
 
     connection.commit()
     connection.close()
 
-def testUser():
+def queryTableValue(returnColumns, tableName, columnName,inputValue):
+    connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
+    cursor = connection.cursor()
+    columns = ", ".join(returnColumns)
+    cursor.execute(
+     f"SELECT {columns} FROM {tableName} WHERE {columnName} = ?",
+    (inputValue,)
+    )
+    result = cursor.fetchone()
+    connection.commit()
+    connection.close()
+    return result
+
+def createUser(username,password,userID,pfp):
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
     cursor = connection.cursor()
     cursor.execute(""" \
-        INSERT INTO user (pfp, username, password, userID) 
-        VALUES (?, ?, ?, ?) """, ("skibi", "skib", "skib","skibidi"))
+        INSERT INTO user (username,password,userID,pfp,joindate) 
+        VALUES (?, ?, ?, ?, ?) """, (username,password,userID,pfp,datetime.date.today().strftime("%Y-%m-%d")))
     connection.commit()
     connection.close()
-
-def queryUser(user):
-    connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
-    cursor = connection.cursor()
-    cursor.execute(
-     "SELECT id, pfp, username, password FROM user WHERE userID = ?",
-    (user,)
-    )
-    a = cursor.fetchone()
-    connection.commit()
-    connection.close()
-    return a
 
 # This will wipe everything, only use when "the trucks are here"
 def TheTrucksAreHere():

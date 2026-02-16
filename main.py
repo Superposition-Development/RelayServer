@@ -1,9 +1,9 @@
-from flask import Flask, request, jsonify
-import init
+from flask import request, jsonify
 from init import app, cors
 import database
 import AuthKeyGen
 from AuthKeyGen import token_required
+from werkzeug.security import check_password_hash
 
 @app.before_request
 def before_request(): 
@@ -15,29 +15,34 @@ def before_request():
 def home():
     return "eventually lets put something cool here"
 
-@app.route("/test",methods=["POST"])
-@token_required
-def test():
-
-    data = request.get_json()
-    
-    return data
-
 #TODO: sanitize userID
 @app.route("/signup",methods=["POST"])
 def signup():
     data = request.get_json()
-    if(database.queryUser(data["userID"]) != None):
+    if(database.queryTableValue("id","user","userID",data["userID"])[0] != None):
          return jsonify({"Error":"UserID taken"})
-    database.
+    database.createUser(data["username"],data["password"],data["userID"],data["pfp"])
     return jsonify(AuthKeyGen.encryptJWT(
         {
             "userID":data["userID"]
     },1))
 
+@app.route("/login",methods=["POST"])
+def login():
+    data = request.get_json()
+    userQuery = database.queryTableValue(["password","userID"],"user","userID",data["userID"])
+
+    if(userQuery == None):
+        return jsonify({"Error":"Invalid Credentials"}) #sure they could just check with /signup to scan for userIDs, but wtv, hopefully anti brute force is written
+    if(not(check_password_hash(userQuery[0],data["password"])) or userQuery[1] != data["userID"]):
+        return jsonify({"Error":"Invalid Credentials"})
+    return jsonify(AuthKeyGen.encryptJWT(
+        {
+            "userID":data["userID"]
+    },60))
 
 def run():
-    # print(database.testUser())
+    database.initialize()
     app.run(port=8080)
 
 run()
