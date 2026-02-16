@@ -1,8 +1,7 @@
 import jwt
 import datetime
 import init
-from init import app
-from flask import Flask, jsonify, request
+from flask import jsonify, request
 from functools import wraps
 import database
 
