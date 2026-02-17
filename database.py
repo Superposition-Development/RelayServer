@@ -1,7 +1,7 @@
 import sqlite3
 import init
-import datetime
 
+#set up all tables
 def initialize():
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
     cursor = connection.cursor()
@@ -20,25 +20,41 @@ def initialize():
     connection.commit()
     connection.close()
 
-def queryTableValue(returnColumns, tableName, columnName,inputValue):
+"""
+get data from a table titled tableName
+columnTitles: the column titles to query (they will be returned)
+columnName: the column name to query by (best used with a UNIQUE or PRIMARY KEY value)
+inputValue: the value to search for inside of the column titled {columnName}
+"""
+def queryTableValue(columnTitles, tableName, columnName, inputValue):
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
     cursor = connection.cursor()
-    columns = ", ".join(returnColumns)
+
+    if isinstance(columnTitles, (list, tuple)):
+        columns = ", ".join(columnTitles)
+    else:
+        columns = columnTitles  # single column
+
     cursor.execute(
-     f"SELECT {columns} FROM {tableName} WHERE {columnName} = ?",
-    (inputValue,)
+        f"SELECT {columns} FROM {tableName} WHERE {columnName} = ?",
+        (inputValue,)
     )
+
     result = cursor.fetchone()
-    connection.commit()
     connection.close()
     return result
 
-def createUser(username,password,userID,pfp):
+def addRowToTable(columnValueMap, tableName):
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
     cursor = connection.cursor()
-    cursor.execute(""" \
-        INSERT INTO user (username,password,userID,pfp,joindate) 
-        VALUES (?, ?, ?, ?, ?) """, (username,password,userID,pfp,datetime.date.today().strftime("%Y-%m-%d")))
+
+    columns = ", ".join(columnValueMap.keys())
+    placeholders = ", ".join(["?"] * len(columnValueMap))
+    values = tuple(columnValueMap.values())
+
+    cursor.execute(f""" \
+        INSERT INTO {tableName} ({columns}) 
+        VALUES ({placeholders}) """, values)
     connection.commit()
     connection.close()
 

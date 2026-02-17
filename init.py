@@ -8,4 +8,4 @@ DATABASE_NAME = os.getenv("DATABASE_NAME")
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 app = Flask(SERVER_NAME)
-cors = CORS(app=app,supports_credentials=True)
+cors = CORS(app=app,supports_credentials=True,origins="*")
