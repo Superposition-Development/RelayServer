@@ -1,21 +1,18 @@
 import sqlite3
 import init
 
-#set up all tables
 def initialize():
+
+    readSqlFile = open('init.sql', 'r')
+    sqlFile = readSqlFile.read()
+    readSqlFile.close()
+
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
     cursor = connection.cursor()
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS user (
-        id INTEGER PRIMARY KEY,
-        pfp TEXT,
-        username TEXT,
-        userID TEXT UNIQUE,
-        password TEXT,
-        joindate DATE
-    )
-    """)
+    connection.execute("PRAGMA foreign_keys = ON;")
+    
+    cursor.executescript(sqlFile)
 
     connection.commit()
     connection.close()
