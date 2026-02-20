@@ -2,9 +2,9 @@ from flask import request, jsonify, Response
 from init import app, cors
 import database
 import AuthKeyGen
-from AuthKeyGen import token_required
+from AuthKeyGen import requiresToken
 from werkzeug.security import check_password_hash,generate_password_hash
-import datetime
+import time
 
 @app.before_request
 def before_request(): 
@@ -15,11 +15,6 @@ def before_request():
 @app.route("/")
 def home():
     return "eventually lets put something cool here"
-
-@app.route("/gatekeep",methods=["POST"])
-@token_required
-def gatekeep(userData):
-    return {"userData":userData}
 
 #TODO: sanitize userID
 @app.route("/signup",methods=["POST"])
@@ -33,13 +28,14 @@ def signup():
         "password": generate_password_hash(data['password'], method='pbkdf2:sha256'),
         "userID": data["userID"],
         "pfp": data["pfp"],
-        "joindate": datetime.date.today().strftime("%Y-%m-%d")
+        "timestamp": int(time.time())
     }
 
     database.addRowToTable(createdUser,"user")
     key = AuthKeyGen.encryptJWT({"userID":data["userID"]},60)
     response = jsonify({
-            "RelayJWT":key
+            "RelayJWT":key,
+            "userID":data["userID"]
         })
     return response
 
@@ -55,7 +51,35 @@ def login():
     
     key = AuthKeyGen.encryptJWT({"userID":data["userID"]},60)
     response = jsonify({
-            "RelayJWT":key
+            "RelayJWT":key,
+            "userID":data["userID"]
+        })
+    return response
+
+
+"""
+expected payload:
+
+serverName: value
+pfp: value
+userID: value
+
+"""
+@app.route("/createServer",methods=["POST"])
+@requiresToken
+def createServer(user):
+    data = request.get_json()
+
+    createdServer = {
+        "name": data["name"],
+        "userID": user[3],
+        "pfp": data["pfp"],
+        "timestamp": int(time.time())
+    }
+    database.addRowToTable(createdServer,"server")
+
+    response = jsonify({
+            "Message":"Server Created Successfully"
         })
     return response
 

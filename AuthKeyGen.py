@@ -22,7 +22,7 @@ def decryptJWT(token):
     print(status)
     return status
 
-def token_required(f):
+def requiresToken(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get("Authorization")
@@ -37,7 +37,7 @@ def token_required(f):
             if("Error" in result.keys()):
                 return jsonify({'Error': 'Invalid JWT'}), 401
             
-            user = database.queryTableValue(["id","pfp","username","userID","password","joindate"],"user","userID",result["Result"]["userID"])
+            user = database.queryTableValue(["id","pfp","username","userID","password","timestamp"],"user","userID",result["Result"]["userID"])
             if(user == None):
                 return jsonify({'Error': 'Invalid JWT'}), 401
     

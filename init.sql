@@ -4,14 +4,14 @@ CREATE TABLE IF NOT EXISTS user (
         username TEXT,
         userID TEXT UNIQUE,
         password TEXT,
-        joindate DATE
+        timestamp INTEGER
     );
 
 CREATE TABLE IF NOT EXISTS message (
         id INTEGER PRIMARY KEY,
         senderID TEXT,
         channelID INTEGER,
-        date DATETIME,
+        timestamp INTEGER,
         content TEXT,
         FOREIGN KEY (senderID) REFERENCES user(userID),
         FOREIGN KEY (channelID) REFERENCES channel(id)
@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS channel (
         id INTEGER PRIMARY KEY,
         name TEXT,
         password TEXT,
-        joindate DATE,
         serverID INTEGER,
         FOREIGN KEY (serverID) REFERENCES server(id)
     );
@@ -31,14 +30,14 @@ CREATE TABLE IF NOT EXISTS server (
         pfp TEXT,
         name TEXT,
         password TEXT,
-        joindate DATE
+        timestamp INTEGER
     );
 
 CREATE TABLE IF NOT EXISTS serverUser (
     id INTEGER PRIMARY KEY,
     serverID INTEGER,
     userID TEXT,
-    joindate DATE,
+    timestamp INTEGER,
     FOREIGN KEY (serverID) REFERENCES server(id),
     FOREIGN KEY (userID) REFERENCES user(userID)
     );
