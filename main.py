@@ -92,24 +92,27 @@ def createServer(user):
         })
     return response
 
-# @app.route("/createChannel",methods=["POST"])
+# @app.route("/getChannels",methods=["POST"])
 # @requiresToken
-# def createChannel(user):
+# def getChannels(user):
 #     data = request.get_json()
+#     serverUserQuery = database.queryTableValue(["userID","serverID"],"user","userID",data["userID"])
+
+#     if(serverUserQuery == None):
+#         return jsonify({"Error":"Invalid Credentials"})
+
 #     createdServer = {
 #         "name": data["name"],
-#         "userID": user[3],
 #         "pfp": data["pfp"],
 #         "timestamp": int(time.time())
 #     }
-#     database.addRowToTable(createdServer,"server")
+#     serverID = database.addRowToTable(createdServer,"server")
+#     createServerUser(serverID,user[3])
 
 #     response = jsonify({
 #             "Message":"Server Created Successfully"
 #         })
 #     return response
-
-
 
 def run():
     database.initialize()
