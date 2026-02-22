@@ -57,6 +57,14 @@ def login():
     return response
 
 
+def createServerUser(serverID,userID):
+    serverUser = {
+        "serverID": serverID,
+        "userID": userID,
+        "timestamp": int(time.time())
+    }
+    database.addRowToTable(serverUser,"serverUser")
+    
 """
 expected payload:
 
@@ -65,6 +73,7 @@ pfp: value
 userID: value
 
 """
+
 @app.route("/createServer",methods=["POST"])
 @requiresToken
 def createServer(user):
@@ -72,16 +81,35 @@ def createServer(user):
 
     createdServer = {
         "name": data["name"],
-        "userID": user[3],
         "pfp": data["pfp"],
         "timestamp": int(time.time())
     }
-    database.addRowToTable(createdServer,"server")
+    serverID = database.addRowToTable(createdServer,"server")
+    createServerUser(serverID,user[3])
 
     response = jsonify({
             "Message":"Server Created Successfully"
         })
     return response
+
+# @app.route("/createChannel",methods=["POST"])
+# @requiresToken
+# def createChannel(user):
+#     data = request.get_json()
+#     createdServer = {
+#         "name": data["name"],
+#         "userID": user[3],
+#         "pfp": data["pfp"],
+#         "timestamp": int(time.time())
+#     }
+#     database.addRowToTable(createdServer,"server")
+
+#     response = jsonify({
+#             "Message":"Server Created Successfully"
+#         })
+#     return response
+
+
 
 def run():
     database.initialize()

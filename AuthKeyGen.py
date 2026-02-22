@@ -19,7 +19,6 @@ def decryptJWT(token):
         status = {"Error":"JWT expired"}
     except jwt.InvalidSignatureError:
         status = {"Error":"https://tenor.com/view/i-know-gif-3951224689799851379"}
-    print(status)
     return status
 
 def requiresToken(f):

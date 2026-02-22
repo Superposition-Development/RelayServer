@@ -48,12 +48,18 @@ def addRowToTable(columnValueMap, tableName):
     columns = ", ".join(columnValueMap.keys())
     placeholders = ", ".join(["?"] * len(columnValueMap))
     values = tuple(columnValueMap.values())
+    # print(values)
 
     cursor.execute(f""" \
         INSERT INTO {tableName} ({columns}) 
-        VALUES ({placeholders}) """, values)
+        VALUES ({placeholders});
+         """, values)
+    
+    cursor.execute("SELECT last_insert_rowid()")
+    result = cursor.fetchone()
     connection.commit()
     connection.close()
+    return result[0]
 
 # This will wipe everything, only use when "the trucks are here"
 def TheTrucksAreHere():
