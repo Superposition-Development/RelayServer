@@ -1,9 +1,7 @@
-from flask import request, jsonify, Response
+from flask import request, jsonify
 from init import app, cors
 import database
-import AuthKeyGen
 from AuthKeyGen import requiresToken
-from werkzeug.security import check_password_hash,generate_password_hash
 import time
 from routes.auth import bpAuth
 
