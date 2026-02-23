@@ -52,6 +52,17 @@ def getServers(user):
     # print(user["userID"])
    
     servers = database.queryTableValue(["serverID"],"serverUser","userID",user["userID"])
+    if(servers == None):
+        response = jsonify({
+            "Message":"No servers found"
+        })
+
+    serverList = []
+
+    for i in servers:
+        serverQuery = database.queryTableValue(["name","pfp"],"server","id",i[0])
+        serverList.append([serverQuery[0],serverQuery[1]])
+        print(i[0])
     # print(servers)
 
     response = jsonify({

@@ -38,6 +38,7 @@ def queryTableValue(columnTitles, tableName, columnName, inputValue):
     )
 
     result = cursor.fetchall()
+    print(result)
     connection.close()
     return result
 

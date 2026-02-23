@@ -10,7 +10,7 @@ bpAuth = Blueprint("auth",__name__)
 @bpAuth.route("/signup",methods=["POST"])
 def signup():
     data = request.get_json()
-    if(database.queryTableValue("id","user","userID",data["userID"]) != None):
+    if(database.queryTableValue("id","user","userID",data["userID"])[0] != None):
          return jsonify({"Error":"UserID taken"})
     
     createdUser = {
