@@ -22,6 +22,20 @@ def decryptJWT(token):
     return status
 
 def requiresToken(f):
+    """
+    Add this to an endpoint to indicate the following function should require a user to have authenticated with the server to proceed
+
+    A sample of this functionality could be
+    ```
+    @bpExample.route("/restrictedAction",methods=["POST"])
+    @requiresToken
+    def restrictedAction(user):
+        print(user["userID"]) # get other data by putting another index into user[]
+    ```
+
+    Will error if the token is invalid, expects the token to be in the headers by Authorization: Bearing {token}
+    
+    """
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get("Authorization")
@@ -39,10 +53,18 @@ def requiresToken(f):
             user = database.queryTableValue(["id","pfp","username","userID","password","timestamp"],"user","userID",result["Result"]["userID"])
             if(user == None):
                 return jsonify({'Error': 'Invalid JWT'}), 401
+            userData = {
+                "id":user[0][0],
+                "pfp":user[0][1],
+                "username":user[0][2],
+                "userID":user[0][3],
+                "password":user[0][4],
+                "timestamp":user[0][5]
+            }
     
         except Exception as e:
             return jsonify({'Error': e}), 401
 
-        return f(user, *args, **kwargs)
+        return f(userData, *args, **kwargs)
 
     return decorated

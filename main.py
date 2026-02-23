@@ -4,6 +4,7 @@ import database
 from AuthKeyGen import requiresToken
 import time
 from routes.auth import bpAuth
+from routes.server import bpServer
 
 @app.before_request
 def before_request(): 
@@ -16,41 +17,8 @@ def home():
     return "eventually lets put something cool here"
 
 app.register_blueprint(bpAuth)
+app.register_blueprint(bpServer)    
 
-def createServerUser(serverID,userID):
-    serverUser = {
-        "serverID": serverID,
-        "userID": userID,
-        "timestamp": int(time.time())
-    }
-    database.addRowToTable(serverUser,"serverUser")
-    
-"""
-expected payload:
-
-serverName: value
-pfp: value
-userID: value
-
-"""
-
-@app.route("/createServer",methods=["POST"])
-@requiresToken
-def createServer(user):
-    data = request.get_json()
-
-    createdServer = {
-        "name": data["name"],
-        "pfp": data["pfp"],
-        "timestamp": int(time.time())
-    }
-    serverID = database.addRowToTable(createdServer,"server")
-    createServerUser(serverID,user[3])
-
-    response = jsonify({
-            "Message":"Server Created Successfully"
-        })
-    return response
 
 def run():
     database.initialize()
