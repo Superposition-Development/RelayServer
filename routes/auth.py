@@ -10,7 +10,7 @@ bpAuth = Blueprint("auth",__name__)
 @bpAuth.route("/signup",methods=["POST"])
 def signup():
     data = request.get_json()
-    if(database.queryTableValue("id","user","userID",data["userID"])[0] != None):
+    if(database.queryTableValue("id","user","userID",data["userID"])["userID"] != None):
          return jsonify({"Error":"UserID taken"})
     
     createdUser = {
@@ -33,10 +33,9 @@ def signup():
 def login():
     data = request.get_json()
     userQuery = database.queryTableValue(["password","userID"],"user","userID",data["userID"])
-
     if(userQuery == None):
         return jsonify({"Error":"Invalid Credentials"}) #sure they could just check with /signup to scan for userIDs, but wtv, hopefully anti brute force is written
-    if(not(check_password_hash(userQuery[0],data["password"])) or userQuery[1] != data["userID"]):
+    if(not(check_password_hash(userQuery["password"],data["password"])) or userQuery["userID"] != data["userID"]):
         return jsonify({"Error":"Invalid Credentials"})
     
     key = AuthKeyGen.encryptJWT({"userID":data["userID"]},60)

@@ -53,18 +53,10 @@ def requiresToken(f):
             user = database.queryTableValue(["id","pfp","username","userID","password","timestamp"],"user","userID",result["Result"]["userID"])
             if(user == None):
                 return jsonify({'Error': 'Invalid JWT'}), 401
-            userData = {
-                "id":user[0][0],
-                "pfp":user[0][1],
-                "username":user[0][2],
-                "userID":user[0][3],
-                "password":user[0][4],
-                "timestamp":user[0][5]
-            }
     
         except Exception as e:
             return jsonify({'Error': e}), 401
 
-        return f(userData, *args, **kwargs)
+        return f(user, *args, **kwargs)
 
     return decorated

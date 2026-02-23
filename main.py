@@ -1,8 +1,6 @@
-from flask import request, jsonify
+from flask import request
 from init import app, cors
 import database
-from AuthKeyGen import requiresToken
-import time
 from routes.auth import bpAuth
 from routes.server import bpServer
 

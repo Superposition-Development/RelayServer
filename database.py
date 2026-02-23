@@ -23,7 +23,7 @@ columnTitles: the column titles to query (they will be returned)
 columnName: the column name to query by (best used with a UNIQUE or PRIMARY KEY value)
 inputValue: the value to search for inside of the column titled {columnName}
 """
-def queryTableValue(columnTitles, tableName, columnName, inputValue):
+def queryTableValue(columnTitles, tableName, columnName, inputValue, duplicateResults=False):
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
     cursor = connection.cursor()
 
@@ -37,10 +37,21 @@ def queryTableValue(columnTitles, tableName, columnName, inputValue):
         (inputValue,)
     )
 
-    result = cursor.fetchall()
-    print(result)
-    connection.close()
-    return result
+    resultMap = {}
+
+    if(duplicateResults):
+        result = cursor.fetchall()
+        for i in range(len(result)):
+            resultMap[i] = result[i][0]
+        return resultMap
+
+    else:
+        result = cursor.fetchone()
+        for i in range(len(result)):
+            resultMap[columnTitles[i]] = result[i] 
+        connection.close()
+        return resultMap    
+
 
 def addRowToTable(columnValueMap, tableName):
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")

@@ -48,22 +48,18 @@ def createServer(user):
 @requiresToken
 def getServers(user):
 
-    # print(user)
-    # print(user["userID"])
-   
-    servers = database.queryTableValue(["serverID"],"serverUser","userID",user["userID"])
-    if(servers == None):
+    servers = database.queryTableValue("serverID","serverUser","userID",user["userID"],True)
+    if(not servers):
         response = jsonify({
             "Message":"No servers found"
         })
 
     serverList = []
 
-    for i in servers:
-        serverQuery = database.queryTableValue(["name","pfp"],"server","id",i[0])
-        serverList.append([serverQuery[0],serverQuery[1]])
-        print(i[0])
-    # print(servers)
+    for i in servers.values():
+        serverQuery = database.queryTableValue(["name","pfp"],"server","id",i)
+        serverList.append({"name":serverQuery["name"],"pfp":serverQuery["pfp"],"id":i})
+    print(serverList)
 
     response = jsonify({
             "Message":"Server Created Successfully"
