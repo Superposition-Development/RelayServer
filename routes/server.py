@@ -59,9 +59,8 @@ def getServers(user):
     for i in servers.values():
         serverQuery = database.queryTableValue(["name","pfp"],"server","id",i)
         serverList.append({"name":serverQuery["name"],"pfp":serverQuery["pfp"],"id":i})
-    print(serverList)
 
     response = jsonify({
-            "Message":"Server Created Successfully"
+            "Message":serverList
         })
     return response

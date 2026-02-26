@@ -3,6 +3,7 @@ import database
 import AuthKeyGen
 from werkzeug.security import check_password_hash,generate_password_hash
 import time
+from init import SIGNUP_PASSWORD_REQUIRED, SIGNUP_PASSWORD
 
 bpAuth = Blueprint("auth",__name__)
 
@@ -10,6 +11,11 @@ bpAuth = Blueprint("auth",__name__)
 @bpAuth.route("/signup",methods=["POST"])
 def signup():
     data = request.get_json()
+
+    if(SIGNUP_PASSWORD_REQUIRED):
+        if(data["signupPassword"] != SIGNUP_PASSWORD):
+            return jsonify({"Error":"Invalid Credentials"})
+
     if(database.queryTableValue("id","user","userID",data["userID"])["userID"] != None):
          return jsonify({"Error":"UserID taken"})
     
