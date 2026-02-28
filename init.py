@@ -4,14 +4,12 @@ from flask_cors import CORS
 import os
 load_dotenv()
 SERVER_NAME = os.getenv("SERVER_NAME")
-CUSTOM_DATABASE_PATH = os.getenv("CUSTOM_DATABASE_PATH")
+USING_CUSTOM_DB_PATH = os.getenv("USING_CUSTOM_DB_PATH") == "True"
 
-if CUSTOM_DATABASE_PATH:
-    if not os.path.exists(CUSTOM_DATABASE_PATH):
-        os.makedirs(CUSTOM_DATABASE_PATH)
-    
-    DATABASE_NAME = os.path.join(CUSTOM_DATABASE_PATH, os.getenv("DATABASE_NAME"))
-else:
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+
+if USING_CUSTOM_DB_PATH:  
+    print("skibidi")
     os_data_path = ""
     match os.name:
         case 'nt':
@@ -24,9 +22,6 @@ else:
 
     DATABASE_NAME = os.path.join(os_data_path, os.getenv("DATABASE_NAME"))
     
-
-
-
 SECRET_KEY = os.getenv("SECRET_KEY")
 SIGNUP_PASSWORD_REQUIRED = os.getenv("SIGNUP_PASSWORD_REQUIRED") == "True"
 SIGNUP_PASSWORD = os.getenv("SIGNUP_PASSWORD")
