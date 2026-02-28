@@ -15,8 +15,10 @@ def signup():
     if(SIGNUP_PASSWORD_REQUIRED):
         if(data["signupPassword"] != SIGNUP_PASSWORD):
             return jsonify({"Error":"Invalid Credentials"})
+        
+    query = database.queryTableValue("id","user","userID",data["userID"])
 
-    if(database.queryTableValue("id","user","userID",data["userID"])["userID"] != None):
+    if(query != None):
          return jsonify({"Error":"UserID taken"})
     
     createdUser = {

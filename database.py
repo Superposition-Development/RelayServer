@@ -41,12 +41,16 @@ def queryTableValue(columnTitles, tableName, columnName, inputValue, duplicateRe
 
     if(duplicateResults):
         result = cursor.fetchall()
+        if(result == None):
+            return None
         for i in range(len(result)):
             resultMap[i] = result[i][0]
         return resultMap
 
     else:
         result = cursor.fetchone()
+        if(result == None):
+            return None
         for i in range(len(result)):
             resultMap[columnTitles[i]] = result[i] 
         connection.close()
