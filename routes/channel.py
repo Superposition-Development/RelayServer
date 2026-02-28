@@ -1,66 +1,59 @@
-# from flask import Blueprint, request, jsonify
-# import database
-# from AuthKeyGen import requiresToken
-# import time
+from flask import Blueprint, request, jsonify
+import database
+from AuthKeyGen import requiresToken
+import time
+from routes.server import userInServer
 
-# bpChannel = Blueprint("channel",__name__)
+bpChannel = Blueprint("channel",__name__)
 
-# def createChannel(serverID,userID):
-#     serverUser = {
-#         "serverID": serverID,
-#         "userID": userID,
-#         "timestamp": int(time.time())
-#     }
-#     database.addRowToTable(serverUser,"serverUser")
+@bpChannel.route("/createChannel",methods=["POST"])
+@requiresToken
+def createChannel(user):
+    """
+  write smth here
 
+    """
+    data = request.get_json()
+    if not(userInServer(user["userID"],data["serverID"])):
+        response = jsonify({
+            "Error":"You are not in that serer"
+        })
 
-# @bpChannel.route("/createServer",methods=["POST"])
-# @requiresToken
-# def createServer(user):
-#     """
-#     Create a server in the server table 
-
-#     The expected payload from the client is as follows, 
+    createdChannel = {
+        "name": data["name"],
+        "serverID": data["serverID"],
+    }
     
-#     {
-#         name: the name of the server to add
-#         pfp: Base64 of picture
-#     }
+    database.addRowAndReturnRowID(createdChannel,"channel")
 
-#     """
-#     data = request.get_json()
+    response = jsonify({
+            "Message":"Channel Created Successfully"
+        })
+    return response
 
-#     createdServer = {
-#         "name": data["name"],
-#         "pfp": data["pfp"],
-#         "timestamp": int(time.time())
-#     }
-#     serverID = database.addRowToTable(createdServer,"server")
-#     createServerUser(serverID,user["userID"])
+# get servers a user is in, i admit this is not a great endpoint name but i dont want a roblox looking method name thats 80 words long
+@bpChannel.route("/getChannels",methods=["POST"])
+@requiresToken
+def getChannels(user):
 
-#     response = jsonify({
-#             "Message":"Server Created Successfully"
-#         })
-#     return response
+    data = request.get_json()
+    if not(userInServer(user["userID"],data["serverID"])):
+        response = jsonify({
+            "Error":"You are not in that serer"
+        })
 
-# # get servers a user is in, i admit this is not a great endpoint name but i dont want a roblox looking method name thats 80 words long
-# @bpServer.route("/getServers",methods=["GET"])
-# @requiresToken
-# def getServers(user):
+    channels = database.queryTableValue(["name","id"],"channel","serverID",data["serverID"],True)
+    if(not channels):
+        response = jsonify({
+            "Message":"No channels found"
+        })
 
-#     servers = database.queryTableValue("serverID","serverUser","userID",user["userID"],True)
-#     if(not servers):
-#         response = jsonify({
-#             "Message":"No servers found"
-#         })
+    channelList = []
 
-#     serverList = []
+    for channel in channels.values():
+        channelList.append({"name":channel[0],"id":channel[1]})
 
-#     for i in servers.values():
-#         serverQuery = database.queryTableValue(["name","pfp"],"server","id",i)
-#         serverList.append({"name":serverQuery["name"],"pfp":serverQuery["pfp"],"id":i})
-
-#     response = jsonify({
-#             "Message":serverList
-#         })
-#     return response
+    response = jsonify({
+            "Message":channelList
+        })
+    return response

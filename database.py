@@ -44,7 +44,7 @@ def queryTableValue(columnTitles, tableName, columnName, inputValue, duplicateRe
         if(result == None):
             return None
         for i in range(len(result)):
-            resultMap[i] = result[i][0]
+            resultMap[i] = result[i]
         return resultMap
 
     else:
@@ -57,7 +57,7 @@ def queryTableValue(columnTitles, tableName, columnName, inputValue, duplicateRe
         return resultMap    
 
 
-def addRowToTable(columnValueMap, tableName):
+def addRowAndReturnRowID(columnValueMap, tableName):
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
     cursor = connection.cursor()
 
