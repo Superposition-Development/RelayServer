@@ -5,13 +5,18 @@ import time
 
 bpServer = Blueprint("server",__name__)
 
+def userInServer(userID,serverID):
+    servers = database.queryTableValue("serverID","serverUser","userID",userID,True)
+    return serverID in servers.values()
+
+
 def createServerUser(serverID,userID):
     serverUser = {
         "serverID": serverID,
         "userID": userID,
         "timestamp": int(time.time())
     }
-    database.addRowToTable(serverUser,"serverUser")
+    database.addRowAndReturnRowID(serverUser,"serverUser")
 
 
 @bpServer.route("/createServer",methods=["POST"])
@@ -35,7 +40,7 @@ def createServer(user):
         "pfp": data["pfp"],
         "timestamp": int(time.time())
     }
-    serverID = database.addRowToTable(createdServer,"server")
+    serverID = database.addRowAndReturnRowID(createdServer,"server")
     createServerUser(serverID,user["userID"])
 
     response = jsonify({
@@ -55,9 +60,11 @@ def getServers(user):
         })
 
     serverList = []
+    print(servers)
 
     for i in servers.values():
-        serverQuery = database.queryTableValue(["name","pfp"],"server","id",i)
+        print(i[0])
+        serverQuery = database.queryTableValue(["name","pfp"],"server","id",i[0])
         serverList.append({"name":serverQuery["name"],"pfp":serverQuery["pfp"],"id":i})
 
     response = jsonify({

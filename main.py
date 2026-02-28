@@ -3,6 +3,7 @@ from init import app, cors
 import database
 from routes.auth import bpAuth
 from routes.server import bpServer
+from routes.channel import bpChannel
 
 @app.before_request
 def before_request(): 
@@ -16,7 +17,7 @@ def home():
 
 app.register_blueprint(bpAuth)
 app.register_blueprint(bpServer)    
-
+app.register_blueprint(bpChannel)
 
 def run():
     database.initialize()
