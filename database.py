@@ -38,23 +38,22 @@ def queryTableValue(columnTitles, tableName, columnName, inputValue, duplicateRe
     )
 
     resultMap = {}
+    
+    result = cursor.fetchall() if duplicateResults else cursor.fetchone()
 
-    if(duplicateResults):
-        result = cursor.fetchall()
-        if(result == None):
-            return None
-        for i in range(len(result)):
-            resultMap[i] = result[i]
-        return resultMap
-
-    else:
-        result = cursor.fetchone()
-        if(result == None):
-            return None
-        for i in range(len(result)):
-            resultMap[columnTitles[i]] = result[i] 
+    if not result:
         connection.close()
-        return resultMap    
+        return None
+
+    if duplicateResults:
+        print(result)
+        connection.close()
+        return result
+
+    resultMap = dict(zip(columnTitles, result))
+
+    connection.close()
+    return resultMap
 
 
 def addRowAndReturnRowID(columnValueMap, tableName):

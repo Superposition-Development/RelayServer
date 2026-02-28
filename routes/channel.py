@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 import database
 from AuthKeyGen import requiresToken
-import time
 from routes.server import userInServer
 
 bpChannel = Blueprint("channel",__name__)
@@ -50,7 +49,7 @@ def getChannels(user):
 
     channelList = []
 
-    for channel in channels.values():
+    for channel in channels:
         channelList.append({"name":channel[0],"id":channel[1]})
 
     response = jsonify({

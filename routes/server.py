@@ -7,7 +7,7 @@ bpServer = Blueprint("server",__name__)
 
 def userInServer(userID,serverID):
     servers = database.queryTableValue("serverID","serverUser","userID",userID,True)
-    return serverID in servers.values()
+    return any(row[0] == serverID for row in servers)
 
 
 def createServerUser(serverID,userID):
@@ -62,7 +62,7 @@ def getServers(user):
     serverList = []
     print(servers)
 
-    for i in servers.values():
+    for i in servers:
         print(i[0])
         serverQuery = database.queryTableValue(["name","pfp"],"server","id",i[0])
         serverList.append({"name":serverQuery["name"],"pfp":serverQuery["pfp"],"id":i})

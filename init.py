@@ -9,7 +9,6 @@ USING_CUSTOM_DB_PATH = os.getenv("USING_CUSTOM_DB_PATH") == "True"
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 
 if USING_CUSTOM_DB_PATH:  
-    print("skibidi")
     os_data_path = ""
     match os.name:
         case 'nt':
