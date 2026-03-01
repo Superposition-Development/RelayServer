@@ -2,6 +2,8 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 import os
+from flask_socketio import SocketIO
+
 load_dotenv()
 SERVER_NAME = os.getenv("SERVER_NAME")
 USING_CUSTOM_DB_PATH = os.getenv("USING_CUSTOM_DB_PATH") == "True"
@@ -26,4 +28,6 @@ SIGNUP_PASSWORD_REQUIRED = os.getenv("SIGNUP_PASSWORD_REQUIRED") == "True"
 SIGNUP_PASSWORD = os.getenv("SIGNUP_PASSWORD")
 
 app = Flask(SERVER_NAME)
+app.config["SECRET_KEY"] = SECRET_KEY
 cors = CORS(app=app,supports_credentials=True,origins="*")
+socketApp = SocketIO(app)

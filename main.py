@@ -1,9 +1,10 @@
 from flask import request
-from init import app, cors
+from init import app, cors, socketApp
 import database
 from routes.auth import bpAuth
 from routes.server import bpServer
 from routes.channel import bpChannel
+from routes.message import bpMessage
 
 @app.before_request
 def before_request(): 
@@ -18,9 +19,10 @@ def home():
 app.register_blueprint(bpAuth)
 app.register_blueprint(bpServer)    
 app.register_blueprint(bpChannel)
+app.register_blueprint(bpMessage)
 
 def run():
     database.initialize()
-    app.run(port=8080)
+    socketApp.run(app,port=6221)
 
 run()

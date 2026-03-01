@@ -46,7 +46,6 @@ def queryTableValue(columnTitles, tableName, columnName, inputValue, duplicateRe
         return None
 
     if duplicateResults:
-        print(result)
         connection.close()
         return result
 

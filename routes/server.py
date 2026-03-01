@@ -60,10 +60,8 @@ def getServers(user):
         })
 
     serverList = []
-    print(servers)
 
     for i in servers:
-        print(i[0])
         serverQuery = database.queryTableValue(["name","pfp"],"server","id",i[0])
         serverList.append({"name":serverQuery["name"],"pfp":serverQuery["pfp"],"id":i})
 
