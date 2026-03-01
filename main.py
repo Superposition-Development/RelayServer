@@ -23,6 +23,6 @@ app.register_blueprint(bpMessage)
 
 def run():
     database.initialize()
-    socketApp.run(app,port=6221)
+    socketApp.run(app,port=8080)
 
 run()
