@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 import os
-from flask_socketio import SocketIO
+from flask_sock import Sock
 
 load_dotenv()
 SERVER_NAME = os.getenv("SERVER_NAME")
@@ -30,4 +30,4 @@ SIGNUP_PASSWORD = os.getenv("SIGNUP_PASSWORD")
 app = Flask(SERVER_NAME)
 app.config["SECRET_KEY"] = SECRET_KEY
 cors = CORS(app=app,supports_credentials=True,origins="*")
-socketApp = SocketIO(app)
+socketApp = Sock(app)

@@ -1,5 +1,5 @@
 from flask import request
-from init import app, cors, socketApp
+from init import app, cors
 import database
 from routes.auth import bpAuth
 from routes.server import bpServer
@@ -23,6 +23,6 @@ app.register_blueprint(bpMessage)
 
 def run():
     database.initialize()
-    socketApp.run(app,port=8080)
+    app.run(port=8080)
 
 run()

@@ -3,10 +3,12 @@ import database
 from AuthKeyGen import requiresToken
 import time
 from routes.server import userInServer
+from init import socketApp
 
 bpMessage = Blueprint("message",__name__)
 
-@bpMessage.route("/sendMessage",methods=["POST"])
+
+@socketApp.route("/sendMessage")
 @requiresToken
 def sendMessage(user):
     """

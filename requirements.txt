@@ -2,4 +2,4 @@ python-dotenv
 Flask
 PyJWT
 flask-cors
-flask-socketio
+flask-sock
