@@ -1,5 +1,5 @@
 from flask import request
-from init import app, cors
+from init import app, cors, socketApp
 import database
 from routes.auth import bpAuth
 from routes.server import bpServer
