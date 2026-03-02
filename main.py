@@ -1,10 +1,11 @@
 from flask import request
-from init import app, cors, socketApp
+from init import app, cors
 import database
 from routes.auth import bpAuth
 from routes.server import bpServer
 from routes.channel import bpChannel
 from routes.message import bpMessage
+# import routes.websocket
 
 @app.before_request
 def before_request(): 
