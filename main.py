@@ -5,7 +5,7 @@ from routes.auth import bpAuth
 from routes.server import bpServer
 from routes.channel import bpChannel
 from routes.message import bpMessage
-from routes.websocket import connections
+import routes.websocket
 
 @app.before_request
 def before_request(): 
