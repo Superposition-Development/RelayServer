@@ -1,7 +1,17 @@
 from init import socketApp
+import json
 
-@socketApp.route("/ws")
+connections = {}
+
+@socketApp.route("/websocket")
 def websocket(ws):
-    while True:
-        text = ws.receive()
-        ws.send(text[::-1])
+    while True: 
+        data = json.loads(ws.receive())
+        if not "message" in data:
+            continue
+        match data["message"]:
+            case "sendMessage":
+                ws.send("message recieved")
+            case "_":
+                continue
+        
