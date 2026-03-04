@@ -2,8 +2,15 @@ from init import socketApp
 import json
 from AuthKeyGen import decryptJWT
 import database
+from routes.server import getServerUsers
 
 connections = {}
+
+def updateConnectionServerList(userID,serverList):
+    connections[userID]["servers"] = serverList
+
+def removeConnection(userID):
+    del connections[userID]    
 
 @socketApp.route("/ws")
 def websocket(ws):
@@ -27,7 +34,12 @@ def websocket(ws):
 
         match data["message"]:
             case "sendMessage":
-                ws.send(json.dumps(response))
+                response["message"] = "recieveMessage"
+                rawServerUsers = getServerUsers(data["serverID"]) #if this is a problem get the serverID from the channelID
+                serverUsers = [userElement[0] for userElement in rawServerUsers]
+                onlineUsers = list(set(serverUsers) & set(connections.keys()))
+                for socket in onlineUsers:
+                    connections[socket].send(json.dumps(response))
             case "_":
                 continue
         
