@@ -2,10 +2,17 @@ from init import socketApp
 import json
 from AuthKeyGen import decryptJWT
 import database
-from routes.server import getServerUsers
+from routes.server import getServerUsers, getServers
 from flask_sock import ConnectionClosed
 
 connections = {}
+
+"""
+{
+ userID:{"servers":[],
+         "ws":ws}
+}
+"""
 
 def updateConnectionServerList(userID,serverList):
     connections[userID]["servers"] = serverList
@@ -31,7 +38,7 @@ def websocket(ws):
             user = database.queryTableValue(["id","pfp","username","userID","password","timestamp"],"user","userID",result["Result"]["userID"])
 
             if not(user["userID"] in connections.keys()): #this might cause a vuln eventually if you can find a way to change the value of the websocket
-                connections[user["userID"]] = ws
+                connections[user["userID"]] = {"servers":getServers(user,True), "ws":ws}
 
             response = {"message":""}
 
@@ -46,4 +53,4 @@ def websocket(ws):
                 case "_":
                     continue
     except ConnectionClosed:
-        print("connection lost")
+        pass

@@ -50,16 +50,11 @@ def createServer(user):
         })
     return response
 
-# get servers a user is in, i admit this is not a great endpoint name but i dont want a roblox looking method name thats 80 words long
-@bpServer.route("/getServers",methods=["GET"])
-@requiresToken
-def getServers(user,getForWebsocket=False):
-
+def getServers(user,getForWebsocket):
+    
     servers = database.queryTableValue("serverID","serverUser","userID",user["userID"],True)
     if(not servers):
-        response = jsonify({
-            "Message":"No servers found"
-        })
+        return "No Servers Found"
 
     serverList = []
 
@@ -70,7 +65,15 @@ def getServers(user,getForWebsocket=False):
         else:
             serverList.append({"name":serverQuery["name"],"pfp":serverQuery["pfp"],"id":i})
 
-    response = jsonify({
-            "Message":serverList
+        return serverList
+
+# get servers a user is in, i admit this is not a great endpoint name but i dont want a roblox looking method name thats 80 words long
+@bpServer.route("/getServers",methods=["GET"])
+@requiresToken
+def getServersWrapper(user,getForWebsocket=False):
+    result = getServers(user,getForWebsocket)
+    if(not getForWebsocket):
+        return jsonify({
+            "Message":result
         })
-    return response
+    return result
