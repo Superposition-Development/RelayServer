@@ -3,6 +3,7 @@ import json
 from AuthKeyGen import decryptJWT
 import database
 from routes.server import getServerUsers
+from flask_sock import ConnectionClosed
 
 connections = {}
 
@@ -12,34 +13,37 @@ def updateConnectionServerList(userID,serverList):
 def removeConnection(userID):
     del connections[userID]    
 
+print("bad")
 @socketApp.route("/ws")
 def websocket(ws):
-    while True: 
-        data = json.loads(ws.receive())
+    try:
+        while True: 
+            data = json.loads(ws.receive())
 
-        if not "message" in data or "authKey" not in data:
-            continue
-
-        result = decryptJWT(data["authKey"])
-
-        if not ("Result" in result.keys()):
-            continue
-
-        user = database.queryTableValue(["id","pfp","username","userID","password","timestamp"],"user","userID",result["Result"]["userID"])
-
-        if not(user["userID"] in connections.keys()): #this might cause a vuln eventually if you can find a way to change the value of the websocket
-            connections[user["userID"]] = ws
-
-        response = {"message":""}
-
-        match data["message"]:
-            case "sendMessage":
-                response["message"] = "recieveMessage"
-                rawServerUsers = getServerUsers(data["serverID"]) #if this is a problem get the serverID from the channelID
-                serverUsers = [userElement[0] for userElement in rawServerUsers]
-                onlineUsers = list(set(serverUsers) & set(connections.keys()))
-                for socket in onlineUsers:
-                    connections[socket].send(json.dumps(response))
-            case "_":
+            if not "message" in data or "authKey" not in data:
                 continue
-        
+
+            result = decryptJWT(data["authKey"])
+
+            if not ("Result" in result.keys()):
+                continue
+
+            user = database.queryTableValue(["id","pfp","username","userID","password","timestamp"],"user","userID",result["Result"]["userID"])
+
+            if not(user["userID"] in connections.keys()): #this might cause a vuln eventually if you can find a way to change the value of the websocket
+                connections[user["userID"]] = ws
+
+            response = {"message":""}
+
+            match data["message"]:
+                case "sendMessage":
+                    response["message"] = "recieveMessage"
+                    rawServerUsers = getServerUsers(data["serverID"]) #if this is a problem get the serverID from the channelID
+                    serverUsers = [userElement[0] for userElement in rawServerUsers]
+                    onlineUsers = list(set(serverUsers) & set(connections.keys()))
+                    for socket in onlineUsers:
+                        connections[socket].send(json.dumps(response))
+                case "_":
+                    continue
+    except ConnectionClosed:
+        print("connection lost")
