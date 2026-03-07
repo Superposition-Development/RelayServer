@@ -6,11 +6,12 @@ from flask_sock import Sock
 
 load_dotenv()
 SERVER_NAME = os.getenv("SERVER_NAME")
-USING_CUSTOM_DB_PATH = os.getenv("USING_CUSTOM_DB_PATH") == "True"
+USING_CUSTOM_DB_PATH = os.getenv("USING_CUSTOM_DB_PATH") == "False"
 
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 
-if USING_CUSTOM_DB_PATH:  
+
+if USING_CUSTOM_DB_PATH:
     os_data_path = ""
     match os.name:
         case 'nt':
