@@ -18,16 +18,23 @@ If `USING_CUSOM_DB_PATH` is `"False"`, the database file (default name of `d9xb1
 
 # `main.py`
 
-`main.py` is responsible for starting up the server itself (via `app.run(PORT)`) and defining the avaiable routes, which are:
+`main.py` is responsible for starting up the server itself (via `app.run(PORT)`) and defining the avaiable HTTP routes, which are:
 
-- `/`
-- `/bpAuth`
-- `/bpServer`
-- `/bpChannel`
-- `/bpMessage`
+- `/signup`
+- `/login`
+- `/createChannel`
+- `/getChannels`
+- `/getMessage`
+- `/createServer`
+- `/getServers`
+
 
 All of these routes are implemented in their respective `.py` file inside the `routes` directory, with the exception of the `/` route, which is in `main.py`
 
 The `/` route is defined in the `home` function, which returns a string as the `html` for the frontend.
+
+One special endpoint case is `/ws`, as this does not function as a HTTP endpoint, but rather the websocket endpoint to be connected to
+
+The websocket "endpoints", which are really message labels sent to the server are as follows: (undefined)
 
 
