@@ -31,7 +31,7 @@ If `USING_CUSOM_DB_PATH` is `"False"`, the database file (default name of `d9xb1
 
 All of these routes are implemented in their respective `.py` file inside the `routes` directory, with the exception of the `/` route, which is in `main.py`
 
-The `/` route is defined in the `home` function, which returns a string as the `html` for the frontend.
+The `/` route is defined in the `home` function, which can return a static HTML page with render_template(), albiet it's best to leave blank
 
 One special endpoint case is `/ws`, as this does not function as a HTTP endpoint, but rather the websocket endpoint to be connected to
 
