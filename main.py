@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 from flask import request
 from init import app, cors
 import database
