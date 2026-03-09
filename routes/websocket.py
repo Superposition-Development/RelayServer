@@ -4,6 +4,7 @@ from AuthKeyGen import decryptJWT
 import database
 from routes.server import getServerUsers, getServers
 from flask_sock import ConnectionClosed
+from simple_websocket import Server
 
 connections = {}
 """
@@ -16,7 +17,7 @@ def removeConnection(ws):
     del connections[ws]
 
 @socketApp.route("/ws")
-def websocket(ws):
+def websocket(ws : Server):
     try:
         while True: 
             data = json.loads(ws.receive())
@@ -33,10 +34,11 @@ def websocket(ws):
             
             connections[ws] = {
                     "servers": getServers(user, True),
-                    "userID":data["userID"]
+                    "userID":user["userID"]
             }
 
-            response = {"message":""}
+            response = {"message":"poop"}
+            print(connections)
 
             match data["message"]:
                 case "sendMessage":
@@ -50,4 +52,3 @@ def websocket(ws):
                     continue
     except ConnectionClosed:
         removeConnection(ws)
-        pass

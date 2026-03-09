@@ -21,6 +21,23 @@ def createServerUser(serverID,userID):
     }
     database.addRowAndReturnRowID(serverUser,"serverUser")
 
+#TODO: make this secure / find some way to be like invitation link if it doesn't match this uuid 
+@bpServer.route("/joinServer",methods=["POST"])
+@requiresToken
+def joinServer(user):
+    data = request.get_json()
+    createServerUser(data["serverID"],user["userID"])
+    response = jsonify({
+            "Message":"Joined server"
+        })
+    return response
+
+#TODO: do this for me please with database.py to delte elemets
+@bpServer.route("/leaveServer",methods=["POST"])
+@requiresToken
+def leaveServer(user):
+    pass
+
 @bpServer.route("/createServer",methods=["POST"])
 @requiresToken
 def createServer(user):
