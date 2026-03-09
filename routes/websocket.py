@@ -9,6 +9,15 @@ connections = {}
 
 """
 {
+    ws: {
+        "servers": [],
+        "userID": userID
+        }
+}
+"""
+
+"""
+{
  userID:{"servers":[],
          "ws":ws}
 }
@@ -17,8 +26,8 @@ connections = {}
 def updateConnectionServerList(userID,serverList):
     connections[userID]["servers"] = serverList
 
-def removeConnection(userID):
-    del connections[userID]    
+def removeConnection(ws):
+    del connections[ws]
 
 print("bad")
 @socketApp.route("/ws")
@@ -37,8 +46,13 @@ def websocket(ws):
 
             user = database.queryTableValue(["id","pfp","username","userID","password","timestamp"],"user","userID",result["Result"]["userID"])
 
-            if not(user["userID"] in connections.keys()): #this might cause a vuln eventually if you can find a way to change the value of the websocket
-                connections[user["userID"]] = {"servers":getServers(user,True), "ws":ws}
+            #if not(user["userID"] in connections.keys()): #this might cause a vuln eventually if you can find a way to change the value of the websocket
+            #    connections[user["userID"]] = {"servers":getServers(user,True), "ws":ws}
+            
+            connections[ws] = {
+                    "servers": getServers(user, True),
+                    "userID": user.id
+            }
 
             response = {"message":""}
 
@@ -53,4 +67,5 @@ def websocket(ws):
                 case "_":
                     continue
     except ConnectionClosed:
+        removeConnection(ws)
         pass
