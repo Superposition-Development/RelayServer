@@ -6,30 +6,15 @@ from routes.server import getServerUsers, getServers
 from flask_sock import ConnectionClosed
 
 connections = {}
-
 """
 {
-    ws: {
-        "servers": [],
-        "userID": userID
-        }
+    ws: {"servers": [], userID:userID}
 }
 """
-
-"""
-{
- userID:{"servers":[],
-         "ws":ws}
-}
-"""
-
-def updateConnectionServerList(userID,serverList):
-    connections[userID]["servers"] = serverList
 
 def removeConnection(ws):
     del connections[ws]
 
-print("bad")
 @socketApp.route("/ws")
 def websocket(ws):
     try:
@@ -45,13 +30,10 @@ def websocket(ws):
                 continue
 
             user = database.queryTableValue(["id","pfp","username","userID","password","timestamp"],"user","userID",result["Result"]["userID"])
-
-            #if not(user["userID"] in connections.keys()): #this might cause a vuln eventually if you can find a way to change the value of the websocket
-            #    connections[user["userID"]] = {"servers":getServers(user,True), "ws":ws}
             
             connections[ws] = {
                     "servers": getServers(user, True),
-                    "userID": user.id
+                    "userID":data["userID"]
             }
 
             response = {"message":""}
@@ -60,10 +42,10 @@ def websocket(ws):
                 case "sendMessage":
                     response["message"] = "recieveMessage"
                     rawServerUsers = getServerUsers(data["serverID"]) #if this is a problem get the serverID from the channelID
-                    serverUsers = [userElement[0] for userElement in rawServerUsers]
-                    onlineUsers = list(set(serverUsers) & set(connections.keys()))
-                    for socket in onlineUsers:
-                        connections[socket].send(json.dumps(response))
+                    serverUsers = set([userElement[0] for userElement in rawServerUsers])
+                    for websocket, userData in connections.items():
+                        if(userData["userID"] in serverUsers):
+                            websocket.send(json.dumps(response))
                 case "_":
                     continue
     except ConnectionClosed:
