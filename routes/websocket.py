@@ -37,7 +37,7 @@ def websocket(ws : Server):
                     "userID":user["userID"]
             }
 
-            response = {"message":"poop"}
+            response = {"message":""}
             print(connections)
 
             match data["message"]:
@@ -48,6 +48,8 @@ def websocket(ws : Server):
                     for websocket, userData in connections.items():
                         if(userData["userID"] in serverUsers):
                             websocket.send(json.dumps(response))
+                case "register":
+                    continue
                 case "_":
                     continue
     except ConnectionClosed:

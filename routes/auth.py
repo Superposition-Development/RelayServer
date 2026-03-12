@@ -41,7 +41,6 @@ def signup():
 def login():
     data = request.get_json()
     userQuery = database.queryTableValue(["password","userID"],"user","userID",data["userID"])
-    print(userQuery)
     if(userQuery == None):
         return jsonify({"Error":"Invalid Credentials"}) #sure they could just check with /signup to scan for userIDs, but wtv, hopefully anti brute force is written
     if(not(check_password_hash(userQuery["password"],data["password"])) or userQuery["userID"] != data["userID"]):
