@@ -19,18 +19,18 @@ def initialize():
 
 """
 get data from a table titled tableName
-columnTitles: the column titles to query (they will be returned)
+returnColumns: the column titles to query (they will be returned)
 columnName: the column name to query by (best used with a UNIQUE or PRIMARY KEY value)
 inputValue: the value to search for inside of the column titled {columnName}
 """
-def queryTableValue(columnTitles, tableName, columnName, inputValue, duplicateResults=False):
+def queryTableValue(returnColumns, tableName, columnName, inputValue, duplicateResults=False):
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
     cursor = connection.cursor()
 
-    if isinstance(columnTitles, (list, tuple)):
-        columns = ", ".join(columnTitles)
+    if isinstance(returnColumns, (list, tuple)):
+        columns = ", ".join(returnColumns)
     else:
-        columns = columnTitles  # single column
+        columns = returnColumns  # single column
 
     cursor.execute(
         f"SELECT {columns} FROM {tableName} WHERE {columnName} = ?",
@@ -49,7 +49,7 @@ def queryTableValue(columnTitles, tableName, columnName, inputValue, duplicateRe
         connection.close()
         return result
 
-    resultMap = dict(zip(columnTitles, result))
+    resultMap = dict(zip(returnColumns, result))
 
     connection.close()
     return resultMap
