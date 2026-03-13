@@ -30,13 +30,6 @@ def websocket(ws : Server):
             if not ("Result" in result.keys()):
                 continue
 
-            user = database.queryTableValue(["id","pfp","username","userID","password","timestamp"],"user","userID",result["Result"]["userID"])
-            
-            connections[ws] = {
-                    "servers": getServers(user, True),
-                    "userID":user["userID"]
-            }
-
             response = {"message":""}
             print(connections)
 
@@ -49,7 +42,11 @@ def websocket(ws : Server):
                         if(userData["userID"] in serverUsers):
                             websocket.send(json.dumps(response))
                 case "register":
-                    continue
+                    user = database.queryTableValue(["id","pfp","username","userID","password","timestamp"],"user","userID",result["Result"]["userID"])
+                    connections[ws] = {
+                    "servers": getServers(user, True),
+                    "userID":user["userID"]
+                    }
                 case "_":
                     continue
     except ConnectionClosed:
