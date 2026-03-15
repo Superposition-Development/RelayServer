@@ -31,7 +31,7 @@ def websocket(ws : Server):
                 continue
 
             response = {"message":""}
-            print(connections)
+            # print(connections)
 
             match data["message"]:
                 case "sendMessage":
