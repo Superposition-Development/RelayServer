@@ -1,6 +1,7 @@
 package main
 
 import (
+	routes "RelayServer/routes"
 	"fmt"
 	"net/http"
 
@@ -34,12 +35,18 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Let's put something cool here eventually")
+}
+
 func main() {
 	http.HandleFunc("/ws", handleConnections)
+	http.HandleFunc("/", homeHandler)
 
 	fmt.Println("WebSocket server started on :8080")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Println("ListenAndServe:", err)
 	}
+	routes.Test()
 }
