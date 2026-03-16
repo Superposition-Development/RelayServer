@@ -1,7 +1,14 @@
 package routes
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+)
 
-func Test() {
-	fmt.Println("works?")
+func RegisterTestEndpoints() {
+	http.HandleFunc("/test", test)
+}
+
+func test(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "woo")
 }

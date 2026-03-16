@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	ServerName     string `env:"SERVER_NAME"`
-	DatabaseName   int    `env:"DATABASE_NAME"`
+	DatabaseName   string `env:"DATABASE_NAME"`
 	SecretKey      string `env:"SECRET_KEY"`
 	SignupPassword string `env:"SIGNUP_PASSWORD"`
 	DBName         string `env:"DB_NAME"`
@@ -17,13 +17,14 @@ type Config struct {
 	// UsingCustomDBPath bool
 }
 
-func init() {
+var config Config
+
+func InitializeConfig() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Couldn't load .env", err)
 	}
 
-	var config Config
 	if err := env.Parse(&config); err != nil {
 		log.Fatalf("Couldn't read .env: %v", err)
 		return

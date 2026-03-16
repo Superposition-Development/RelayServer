@@ -40,13 +40,16 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	InitializeConfig()
+	InitializeDB()
+
 	http.HandleFunc("/ws", handleConnections)
 	http.HandleFunc("/", homeHandler)
+	routes.RegisterTestEndpoints()
 
-	fmt.Println("WebSocket server started on :8080")
+	fmt.Println("Relay Server active on port 8080")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		fmt.Println("ListenAndServe:", err)
+		fmt.Println("Relay Exception:", err)
 	}
-	routes.Test()
 }
