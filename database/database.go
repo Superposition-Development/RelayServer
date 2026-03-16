@@ -1,10 +1,11 @@
-package main
+package database
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -16,7 +17,9 @@ func InitializeDB() {
 	}
 	sqlScript := string(sqlByte)
 
-	db, err := sql.Open("sqlite", config.DBName+".db")
+	fmt.Println(config.DatabaseName)
+
+	db, err := sql.Open("sqlite", config.DatabaseName+".db")
 	if err != nil {
 		log.Fatalf("Couldn't open database: %v", err)
 	}
@@ -33,4 +36,18 @@ func InitializeDB() {
 	}
 
 	fmt.Println("Relay DB Initialized")
+}
+
+func QueryRow(returnValues []string) {
+	formattedReturnValues := strings.Join(returnValues, ", ")
+
+	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	if err != nil {
+		log.Fatalf("Couldn't open database: %v", err)
+	}
+
+	queryPrompt := "SELECT" + formattedReturnValues
+
+	db.QueryRow(queryPrompt)
+	defer db.Close()
 }

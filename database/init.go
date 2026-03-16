@@ -1,6 +1,7 @@
-package main
+package database
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/caarlos0/env/v11"
@@ -12,7 +13,6 @@ type Config struct {
 	DatabaseName   string `env:"DATABASE_NAME"`
 	SecretKey      string `env:"SECRET_KEY"`
 	SignupPassword string `env:"SIGNUP_PASSWORD"`
-	DBName         string `env:"DB_NAME"`
 	// SignupPasswordRequired bool
 	// UsingCustomDBPath bool
 }
@@ -29,4 +29,5 @@ func InitializeConfig() {
 		log.Fatalf("Couldn't read .env: %v", err)
 		return
 	}
+	fmt.Println(config)
 }

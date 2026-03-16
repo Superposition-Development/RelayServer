@@ -1,6 +1,7 @@
 package main
 
 import (
+	database "RelayServer/database"
 	routes "RelayServer/routes"
 	"fmt"
 	"net/http"
@@ -40,8 +41,8 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	InitializeConfig()
-	InitializeDB()
+	database.InitializeConfig()
+	database.InitializeDB()
 
 	http.HandleFunc("/ws", handleConnections)
 	http.HandleFunc("/", homeHandler)
