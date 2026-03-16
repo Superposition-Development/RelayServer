@@ -1,6 +1,8 @@
-package main
+package relayDB
 
 import (
+	_ "RelayServer/relayConfig"
+
 	"database/sql"
 	"fmt"
 	"log"
@@ -9,14 +11,18 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+
+// FIXME: (If possible) Paths are like this since they're relative to main.go
+
 func InitializeDB() {
-	sqlByte, err := os.ReadFile("init.sql")
+	sqlByte, err := os.ReadFile("../relayDB/init.sql")
 	if err != nil {
 		log.Fatalf("Couldn't read init.sql: %v", err)
 	}
 	sqlScript := string(sqlByte)
 
-	db, err := sql.Open("sqlite", config.DBName+".db")
+	// Jon i have no idea where you're getting that config var from :(
+	db, err := sql.Open("sqlite", "../relayDB/d9xb1.db")
 	if err != nil {
 		log.Fatalf("Couldn't open database: %v", err)
 	}

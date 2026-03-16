@@ -2,6 +2,9 @@ package main
 
 import (
 	routes "RelayServer/routes"
+	relayDB "RelayServer/relayDB"
+	relayConfig "RelayServer/relayConfig"
+	
 	"fmt"
 	"net/http"
 
@@ -40,8 +43,8 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	InitializeConfig()
-	InitializeDB()
+	relayConfig.InitializeConfig()
+	relayDB.InitializeDB()
 
 	http.HandleFunc("/ws", handleConnections)
 	http.HandleFunc("/", homeHandler)
