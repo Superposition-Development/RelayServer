@@ -28,7 +28,6 @@ CREATE TABLE IF NOT EXISTS server (
         id INTEGER PRIMARY KEY,
         pfp TEXT,
         name TEXT,
-        password TEXT,
         timestamp INTEGER
     );
 

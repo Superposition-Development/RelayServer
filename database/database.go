@@ -10,6 +10,8 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+//
+
 func InitializeDB() {
 	sqlByte, err := os.ReadFile("init.sql")
 	if err != nil {
