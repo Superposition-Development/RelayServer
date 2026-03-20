@@ -40,7 +40,8 @@ func InitializeDB() {
 	fmt.Println("Relay DB Initialized")
 }
 
-func QueryRow(returnValues []string) {
+// needs to be sanitized
+func QueryRow(returnValues []string, tableName string, columnToQuery string, inputValue string) (map[string]any, error) {
 	formattedReturnValues := strings.Join(returnValues, ", ")
 
 	db, err := sql.Open("sqlite", config.DatabaseName+".db")
@@ -48,8 +49,34 @@ func QueryRow(returnValues []string) {
 		log.Fatalf("Couldn't open database: %v", err)
 	}
 
-	queryPrompt := "SELECT" + formattedReturnValues
+	queryPrompt := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE %s = ?",
+		formattedReturnValues,
+		tableName,
+		columnToQuery,
+	)
 
-	db.QueryRow(queryPrompt)
-	defer db.Close()
+	values := make([]any, len(returnValues))
+	valuePtrs := make([]any, len(returnValues))
+
+	row := db.QueryRow(queryPrompt, inputValue)
+
+	for i := range values {
+		valuePtrs[i] = &values[i]
+	}
+
+	err = row.Scan(valuePtrs...)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	resultMap := make(map[string]any)
+	for i, col := range returnValues {
+		resultMap[col] = values[i]
+	}
+
+	return resultMap, nil
 }
