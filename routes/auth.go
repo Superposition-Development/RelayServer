@@ -1,7 +1,6 @@
 package routes
 
 import (
-	db "RelayServer/database"
 	"encoding/json"
 	"net/http"
 )
@@ -30,7 +29,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
 		return
 	}
-	db.QueryRow()
+	// db.QueryRow()
 }
 
 // from flask import Blueprint, request, jsonify
