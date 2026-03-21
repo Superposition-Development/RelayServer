@@ -40,7 +40,7 @@ func InitializeDB() {
 	fmt.Println("Relay DB Initialized")
 }
 
-// needs to be sanitized
+// SELECT returnValues FROM tableName WHERE columnToQuery = inputValue
 func QueryRow(returnValues []string, tableName string, columnToQuery string, inputValue string) (map[string]any, error) {
 	formattedReturnValues := strings.Join(returnValues, ", ")
 
@@ -79,4 +79,43 @@ func QueryRow(returnValues []string, tableName string, columnToQuery string, inp
 	}
 
 	return resultMap, nil
+}
+
+// SELECT returnValues FROM tableName WHERE columnToQuery = inputValue
+func Query(returnValues []string, tableName string, columnToQuery string, inputValue string) ([][]any, error) {
+	formattedReturnValues := strings.Join(returnValues, ", ")
+
+	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	if err != nil {
+		log.Fatalf("Couldn't open database: %v", err)
+	}
+
+	queryPrompt := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE %s = ?",
+		formattedReturnValues,
+		tableName,
+		columnToQuery,
+	)
+
+	rows, err := db.Query(queryPrompt, inputValue)
+
+	var results [][]any
+
+	for rows.Next() {
+		values := make([]any, len(returnValues))
+		valuePtrs := make([]any, len(returnValues))
+
+		for i := range values {
+			valuePtrs[i] = &values[i]
+		}
+
+		err := rows.Scan(valuePtrs...)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, values)
+	}
+
+	return results, nil
 }

@@ -48,12 +48,13 @@ func main() {
 	http.HandleFunc("/", homeHandler)
 	routes.RegisterTestEndpoints()
 
-	fmt.Println(database.QueryRow([]string{"id", "username"}, "user", "userID", "user"))
+	// fmt.Println(database.QueryRow([]string{"id", "username"}, "user", "userID", "user"))
+	// fmt.Println(database.Query([]string{"id"}, "serverUser", "serverID", "1"))
 	fmt.Println("Relay Server active on port 8080")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		fmt.Println("Relay Exception:", err)
 	}
-	// database.queryTableValue("id","user","userID",data["userID"])
+	// database.queryTableValue("id","user","userID",data["	userID"])
 	// row := database.QueryRow([]string{"id"}, "user", "userID", "user")
 }
