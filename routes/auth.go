@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"RelayServer/database"
 	"encoding/json"
 	"net/http"
 )
@@ -29,6 +30,7 @@ func signup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
 		return
 	}
+	row := database.QueryRow([]string{"id"}, "user", "userID", "user")
 	// db.QueryRow()
 }
 

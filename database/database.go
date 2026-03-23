@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"maps"
 	"os"
 	"strings"
 
@@ -119,3 +120,80 @@ func Query(returnValues []string, tableName string, columnToQuery string, inputV
 
 	return results, nil
 }
+
+// INSERT INTO {tableName} ({columns}) VALUES ({..?, ?, ?...}});
+func addRowWithIDReturn(columnMap map[string]any, tableName string) {
+
+	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	if err != nil {
+		log.Fatalf("Couldn't open database: %v", err)
+	}
+
+	keys := make([]string, 0, len(columnMap))
+	for k := range columnMap {
+		keys = append(keys, k)
+	}
+
+	questionMarkArray := make([]string, 0, len(columnMap))
+	for i, _ := range questionMarkArray {
+		questionMarkArray[i] = "?"
+	}
+
+	columns := strings.Join(keys, ", ")
+	questionMarks := strings.Join(questionMarkArray, ", ")
+
+	executePrompt := fmt.Sprintf(
+		"INSERT INTO %s (%s) VALUES (%s);",
+		tableName,
+		columns,
+		questionMarks,
+	)
+
+	//TODO: UNTESTED
+	db.Exec(executePrompt, maps.Values(columnMap))
+
+	result, err := db.Query("SELECT last_insert_rowid()")
+
+	var results [][]any
+
+	for rows.Next() {
+		values := make([]any, len(returnValues))
+		valuePtrs := make([]any, len(returnValues))
+
+		for i := range values {
+			valuePtrs[i] = &values[i]
+		}
+
+		err := rows.Scan(valuePtrs...)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, values)
+	}
+
+	return results, nil
+	return result
+}
+
+/*
+def addRowAndReturnRowID(columnValueMap, tableName):
+    connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
+    cursor = connection.cursor()
+
+    columns = ", ".join(columnValueMap.keys())
+    placeholders = ", ".join(["?"] * len(columnValueMap))
+    values = tuple(columnValueMap.values())
+    # print(values)
+
+    cursor.execute(f""" \
+        INSERT INTO {tableName} ({columns})
+        VALUES ({placeholders});
+         """, values)
+
+    cursor.execute("SELECT last_insert_rowid()")
+    result = cursor.fetchone()
+    connection.commit()
+    connection.close()
+    return result[0]
+*/
