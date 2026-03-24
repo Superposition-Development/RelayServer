@@ -122,7 +122,7 @@ func Query(returnValues []string, tableName string, columnToQuery string, inputV
 }
 
 // INSERT INTO {tableName} ({columns}) VALUES ({..?, ?, ?...}});
-func addRowWithIDReturn(columnMap map[string]any, tableName string) {
+func addRowWithIDReturn(columnMap map[string]any, tableName string) (any, error) {
 
 	db, err := sql.Open("sqlite", config.DatabaseName+".db")
 	if err != nil {
@@ -135,7 +135,7 @@ func addRowWithIDReturn(columnMap map[string]any, tableName string) {
 	}
 
 	questionMarkArray := make([]string, 0, len(columnMap))
-	for i, _ := range questionMarkArray {
+	for i := range questionMarkArray {
 		questionMarkArray[i] = "?"
 	}
 
@@ -152,28 +152,22 @@ func addRowWithIDReturn(columnMap map[string]any, tableName string) {
 	//TODO: UNTESTED
 	db.Exec(executePrompt, maps.Values(columnMap))
 
-	result, err := db.Query("SELECT last_insert_rowid()")
+	// result, err := db.Query("SELECT last_insert_rowid()")
 
-	var results [][]any
+	row := db.QueryRow("SELECT last_insert_rowid()")
 
-	for rows.Next() {
-		values := make([]any, len(returnValues))
-		valuePtrs := make([]any, len(returnValues))
+	id := ""
+	idPtr := &id
 
-		for i := range values {
-			valuePtrs[i] = &values[i]
-		}
-
-		err := rows.Scan(valuePtrs...)
-		if err != nil {
-			return nil, err
-		}
-
-		results = append(results, values)
+	err = row.Scan(idPtr)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	return results, nil
-	return result
+	return id, nil
 }
 
 /*
