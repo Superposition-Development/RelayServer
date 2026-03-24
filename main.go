@@ -49,6 +49,9 @@ func main() {
 	routes.RegisterTestEndpoints()
 
 	// fmt.Println(database.QueryRow([]string{"id", "username"}, "user", "userID", "user"))
+	row, _ := database.QueryRow([]string{"id", "username"}, "user", "userID", "usera")
+	fmt.Println(row)
+	fmt.Println(len(row))
 	// fmt.Println(database.Query([]string{"id"}, "serverUser", "serverID", "1"))
 	fmt.Println("Relay Server active on port 8080")
 	err := http.ListenAndServe(":8080", nil)
