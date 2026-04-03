@@ -3,19 +3,20 @@ package database
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
 )
 
-type MyClaims struct {
+type TokenClaims struct {
 	jwt.RegisteredClaims
-	Username string `json:"username"`
+	UserID string `json:"userID"`
 }
 
-func decryptJWT(tokenString string) (*jwt.Token, error) {
+func DecryptJWT(tokenString string) (*jwt.Token, error) {
 	secretKey := []byte(config.SecretKey)
 
-	token, err := jwt.ParseWithClaims(tokenString, &MyClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
@@ -27,14 +28,23 @@ func decryptJWT(tokenString string) (*jwt.Token, error) {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*MyClaims); ok && token.Valid {
-		fmt.Println("Token valid for user:", claims.Username)
+	if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
+		fmt.Println("Token valid for user:", claims.UserID)
 	} else {
 		fmt.Println("Invalid token")
 	}
 	return token, nil
 }
 
-func encryptJWT() {
+func EncryptJWT(userID string, expireTimeMin int) (string, error) {
+	claim := TokenClaims{
+		UserID: userID,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(expireTimeMin) * time.Minute)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
 
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
+	return token.SignedString(config.SecretKey)
 }
