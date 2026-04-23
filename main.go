@@ -40,12 +40,18 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Let's put something cool here eventually")
 }
 
+func registerEndpoints() {
+	http.HandleFunc("/ws", handleConnections)
+	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/signup", routes.Signup)
+	http.HandleFunc("/login", routes.Login)
+}
+
 func main() {
 	database.InitializeConfig()
 	database.InitializeDB()
+	registerEndpoints()
 
-	http.HandleFunc("/ws", handleConnections)
-	http.HandleFunc("/", homeHandler)
 	routes.RegisterTestEndpoints()
 
 	// fmt.Println(database.QueryRow([]string{"id", "username"}, "user", "userID", "user"))

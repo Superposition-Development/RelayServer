@@ -6,10 +6,6 @@ import (
 	"net/http"
 )
 
-func RegisterAuthEndpoints() {
-	http.HandleFunc("/signup", signup)
-}
-
 type SignupRequest struct {
 	Username       string `json:"username"`
 	Password       string `json:"password"`
@@ -23,7 +19,7 @@ type SignupResponse struct {
 	UserID   string `json:"userID"`
 }
 
-func signup(w http.ResponseWriter, r *http.Request) {
+func Signup(w http.ResponseWriter, r *http.Request) {
 	var data SignupRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
@@ -37,6 +33,20 @@ func signup(w http.ResponseWriter, r *http.Request) {
 
 	// if()
 	// db.QueryRow()
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	var data SignupRequest
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
+		return
+	}
+	row, err := db.QueryRow([]string{"id"}, "user", "userID", "user")
+	if len(row) != 0 {
+		http.Error(w, "User Already Exists", http.StatusUnauthorized)
+	}
+
 }
 
 // from flask import Blueprint, request, jsonify
