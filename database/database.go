@@ -122,7 +122,7 @@ func Query(returnValues []string, tableName string, columnToQuery string, inputV
 }
 
 // INSERT INTO {tableName} ({columns}) VALUES ({..?, ?, ?...}});
-func addRowWithIDReturn(columnMap map[string]any, tableName string) (any, error) {
+func AddRowWithIDReturn(columnMap map[string]any, tableName string) (any, error) {
 
 	db, err := sql.Open("sqlite", config.DatabaseName+".db")
 	if err != nil {

@@ -26,13 +26,19 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
 		return
 	}
-	row, err := db.QueryRow([]string{"id"}, "user", "userID", "user")
+	row, err := db.QueryRow([]string{"id"}, "user", "userID", data.UserID)
 	if len(row) != 0 {
 		http.Error(w, "User Already Exists", http.StatusUnauthorized)
 	}
 
-	// if()
-	// db.QueryRow()
+	userData := map[string]any{
+		"pfp":      data.Pfp,
+		"username": data.Username,
+		"userID":   data.UserID,
+		"password": data.Password, //need to encrypt this
+	}
+
+	db.AddRowWithIDReturn(userData, "user")
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
