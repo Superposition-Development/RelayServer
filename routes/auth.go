@@ -14,7 +14,7 @@ type SignupRequest struct {
 	SignupPassword string `json:"signupPassword"`
 }
 
-type SignupResponse struct {
+type Response struct {
 	RelayJWT string `json:"RelayJWT"`
 	UserID   string `json:"userID"`
 }
@@ -39,6 +39,17 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db.AddRowWithIDReturn(userData, "user")
+
+	w.Header().Set("Content-Type", "application/json")
+	signup := Response{RelayJWT: "fortnite", UserID: data.UserID}
+	response, err := json.Marshal(signup)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(response)
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
