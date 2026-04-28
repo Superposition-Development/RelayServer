@@ -58,17 +58,49 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	var data SignupRequest
+	var data LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
 		return
 	}
-	row, err := db.QueryRow([]string{"id"}, "user", "userID", "user")
-	if len(row) != 0 {
-		http.Error(w, "User Already Exists", http.StatusUnauthorized)
+
+	/*
+	   // @bpAuth.route("/login",methods=["POST"])
+	   // def login():
+	   //     data = request.get_json()
+	   //     userQuery = database.queryTableValue(["password","userID"],"user","userID",data["userID"])
+	   //     if(userQuery == None):
+	   //         return jsonify({"Error":"Invalid Credentials"}) #sure they could just check with /signup to scan for userIDs, but wtv, hopefully anti brute force is written
+	   //     if(not(check_password_hash(userQuery["password"],data["password"])) or userQuery["userID"] != data["userID"]):
+	   //         return jsonify({"Error":"Invalid Credentials"})
+
+	   //     key = AuthKeyGen.encryptJWT({"userID":data["userID"]},60)
+	   //     response = jsonify({
+	   //             "RelayJWT":key,
+	   //             "userID":data["userID"]
+	   //         })
+	   //     return response
+	*/
+
+	row, err := db.QueryRow([]string{"userID", "password"}, "user", "userID", data.UserID)
+	if len(row) == 0 {
+		http.Error(w, "No User Found", http.StatusUnauthorized)
+	}
+	if data.Password != row["password"] { //
+		http.Error(w, "Incorrect credentials", http.StatusUnauthorized)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	signup := Response{RelayJWT: "fortnite", UserID: data.UserID}
+	response, err := json.Marshal(signup)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(response)
 }
 
 // from flask import Blueprint, request, jsonify
