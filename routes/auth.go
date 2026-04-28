@@ -46,7 +46,8 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	db.AddRowWithIDReturn(userData, "user")
 
 	w.Header().Set("Content-Type", "application/json")
-	signup := Response{RelayJWT: "fortnite", UserID: data.UserID}
+	jwt, err := db.EncryptJWT(data.UserID, 60)
+	signup := Response{RelayJWT: jwt, UserID: data.UserID}
 	response, err := json.Marshal(signup)
 
 	if err != nil {
@@ -92,7 +93,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	signup := Response{RelayJWT: "fortnite", UserID: data.UserID}
+	jwt, err := db.EncryptJWT(data.UserID, 60)
+	//err handle @felipeseenacoder
+
+	signup := Response{RelayJWT: jwt, UserID: data.UserID}
 	response, err := json.Marshal(signup)
 
 	if err != nil {
