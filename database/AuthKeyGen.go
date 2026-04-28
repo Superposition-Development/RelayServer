@@ -6,6 +6,7 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type TokenClaims struct {
@@ -47,4 +48,8 @@ func EncryptJWT(userID string, expireTimeMin int) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 	return token.SignedString(config.SecretKey)
+}
+
+func HashPassword(password string) {
+	bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 }
