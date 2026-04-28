@@ -14,6 +14,11 @@ type SignupRequest struct {
 	SignupPassword string `json:"signupPassword"`
 }
 
+type LoginRequest struct {
+	Password string `json:"password"`
+	UserID   string `json:"userID"`
+}
+
 type Response struct {
 	RelayJWT string `json:"RelayJWT"`
 	UserID   string `json:"userID"`
