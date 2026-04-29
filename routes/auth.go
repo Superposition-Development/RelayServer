@@ -3,6 +3,7 @@ package routes
 import (
 	db "RelayServer/database"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -48,6 +49,9 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	jwt, err := db.EncryptJWT(data.UserID, 60)
+	if err != nil {
+		fmt.Print(err)
+	}
 	signup := Response{RelayJWT: jwt, UserID: data.UserID}
 	response, err := json.Marshal(signup)
 

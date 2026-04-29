@@ -47,7 +47,7 @@ func EncryptJWT(userID string, expireTimeMin int) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	return token.SignedString(config.SecretKey)
+	return token.SignedString([]byte(config.SecretKey))
 }
 
 func HashPassword(password string) {
