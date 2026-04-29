@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"maps"
 	"os"
 	"strings"
 
@@ -134,7 +133,12 @@ func AddRowWithIDReturn(columnMap map[string]any, tableName string) (any, error)
 		keys = append(keys, k)
 	}
 
-	questionMarkArray := make([]string, 0, len(columnMap))
+	values := make([]any, 0, len(keys))
+	for _, k := range keys {
+		values = append(values, columnMap[k])
+	}
+
+	questionMarkArray := make([]string, len(columnMap))
 	for i := range questionMarkArray {
 		questionMarkArray[i] = "?"
 	}
@@ -150,7 +154,7 @@ func AddRowWithIDReturn(columnMap map[string]any, tableName string) (any, error)
 	)
 
 	//TODO: UNTESTED
-	db.Exec(executePrompt, maps.Values(columnMap))
+	_, err = db.Exec(executePrompt, values...)
 
 	// result, err := db.Query("SELECT last_insert_rowid()")
 
