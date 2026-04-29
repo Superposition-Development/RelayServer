@@ -34,6 +34,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	row, err := db.QueryRow([]string{"id"}, "user", "userID", data.UserID)
 	if len(row) != 0 {
 		http.Error(w, "User Already Exists", http.StatusUnauthorized)
+		return
 	}
 
 	userData := map[string]any{

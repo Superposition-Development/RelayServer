@@ -170,6 +170,17 @@ func AddRowWithIDReturn(columnMap map[string]any, tableName string) (any, error)
 	return id, nil
 }
 
+func TheTrucksAreHere() {
+	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	if err != nil {
+		log.Fatalf("Couldn't open database: %v", err)
+	}
+
+	executePrompt := "PRAGMA writable_schema = 1; DELETE FROM sqlite_master; PRAGMA writable_schema = 0;VACUUM; PRAGMA integrity_check;"
+
+	db.Exec(executePrompt)
+}
+
 /*
 def addRowAndReturnRowID(columnValueMap, tableName):
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")

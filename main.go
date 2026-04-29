@@ -13,6 +13,20 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8000")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func handleConnections(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -49,21 +63,13 @@ func registerEndpoints() {
 
 func main() {
 	database.InitializeConfig()
+	// database.TheTrucksAreHere()
 	database.InitializeDB()
 	registerEndpoints()
-
-	routes.RegisterTestEndpoints()
-
-	// fmt.Println(database.QueryRow([]string{"id", "username"}, "user", "userID", "user"))
-	row, _ := database.QueryRow([]string{"id", "username"}, "user", "userID", "usera")
-	fmt.Println(row)
-	fmt.Println(len(row))
-	// fmt.Println(database.Query([]string{"id"}, "serverUser", "serverID", "1"))
 	fmt.Println("Relay Server active on port 8080")
-	err := http.ListenAndServe(":8080", nil)
+	handler := enableCORS(http.DefaultServeMux)
+	err := http.ListenAndServe(":8080", handler)
 	if err != nil {
-		fmt.Println("Relay Exception:", err)
+		//lowk what do we even do here
 	}
-	// database.queryTableValue("id","user","userID",data["	userID"])
-	// row := database.QueryRow([]string{"id"}, "user", "userID", "user")
 }
