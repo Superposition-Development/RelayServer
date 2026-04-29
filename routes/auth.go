@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type SignupRequest struct {
@@ -39,10 +40,11 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userData := map[string]any{
-		"pfp":      data.Pfp,
-		"username": data.Username,
-		"userID":   data.UserID,
-		"password": data.Password, //need to encrypt this
+		"pfp":       data.Pfp,
+		"username":  data.Username,
+		"userID":    data.UserID,
+		"password":  data.Password, //need to encrypt this
+		"timestamp": time.Now().Unix(),
 	}
 
 	db.AddRowWithIDReturn(userData, "user")
