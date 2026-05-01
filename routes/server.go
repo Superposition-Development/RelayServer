@@ -7,8 +7,16 @@ package routes
 
 import (
 	db "RelayServer/database"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"time"
 )
+
+type CreateServerRequest struct {
+	Name string `json:"name"`
+	Pfp  string `json:"pfp"`
+}
 
 func CreateServerUser(serverID string, userID string) {
 
@@ -20,7 +28,45 @@ func CreateServerUser(serverID string, userID string) {
 	db.AddRowWithIDReturn(serverUser, "serverUser")
 }
 
-// bpServer = Blueprint("server",__name__)
+func CreateServer(w http.ResponseWriter, r *http.Request) {
+	var data CreateServerRequest
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
+		return
+	}
+
+	serverData := map[string]any{
+		"pfp":       data.Pfp,
+		"name":      data.Name,
+		"timestamp": time.Now().Unix(),
+	}
+
+	serverID, err := db.AddRowWithIDReturn(serverData, "server")
+	if err != nil {
+		//do something
+	}
+	//do some thing abt check the headers for the JWT and then create serverUser
+	CreateServerUser(serverID)
+	fmt.Fprintf(w, "created server")
+}
+
+// @bpServer.route("/createServer",methods=["POST"])
+// @requiresToken
+//     data = request.get_json()
+
+//     createdServer = {
+//         "name": data["name"],
+//         "pfp": data["pfp"],
+//         "timestamp": int(time.time())
+//     }
+//     serverID = database.addRowAndReturnRowID(createdServer,"server")
+//     createServerUser(serverID,user["userID"])
+
+//     response = jsonify({
+//             "Message":"Server Created Successfully"
+//         })
+//     return response
 
 // def userInServer(userID,serverID):
 //     servers = database.queryTableValue("serverID","serverUser","userID",userID,True)
@@ -29,14 +75,6 @@ func CreateServerUser(serverID string, userID string) {
 // #get all userIDs in a server
 // def getServerUsers(serverID):
 //     return database.queryTableValue("userID","serverUser","serverID",serverID,True)
-
-// def createServerUser(serverID,userID):
-//     serverUser = {
-//         "serverID": serverID,
-//         "userID": userID,
-//         "timestamp": int(time.time())
-//     }
-//     database.addRowAndReturnRowID(serverUser,"serverUser")
 
 // #TODO: make this secure / find some way to be like invitation link if it doesn't match this uuid
 // @bpServer.route("/joinServer",methods=["POST"])
@@ -54,35 +92,6 @@ func CreateServerUser(serverID string, userID string) {
 // @requiresToken
 // def leaveServer(user):
 //     pass
-
-// @bpServer.route("/createServer",methods=["POST"])
-// @requiresToken
-// def createServer(user):
-//     """
-//     Create a server in the server table
-
-//     The expected payload from the client is as follows,
-
-//     {
-//         name: the name of the server to add
-//         pfp: Base64 of picture
-//     }
-
-//     """
-//     data = request.get_json()
-
-//     createdServer = {
-//         "name": data["name"],
-//         "pfp": data["pfp"],
-//         "timestamp": int(time.time())
-//     }
-//     serverID = database.addRowAndReturnRowID(createdServer,"server")
-//     createServerUser(serverID,user["userID"])
-
-//     response = jsonify({
-//             "Message":"Server Created Successfully"
-//         })
-//     return response
 
 // def getServers(user,getForWebsocket):
 
