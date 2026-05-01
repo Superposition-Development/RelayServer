@@ -3,6 +3,8 @@ package database
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -29,11 +31,11 @@ func DecryptJWT(tokenString string) (*jwt.Token, error) {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
-		fmt.Println("Token valid for user:", claims.UserID)
-	} else {
-		fmt.Println("Invalid token")
-	}
+	// if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
+	// 	fmt.Println("Token valid for user:", claims.UserID)
+	// } else {
+	// 	fmt.Println("Invalid token")
+	// }
 	return token, nil
 }
 
@@ -48,6 +50,24 @@ func EncryptJWT(userID string, expireTimeMin int) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 	return token.SignedString([]byte(config.SecretKey))
+}
+
+func AuthHeaderValidation(r *http.Request) (any, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return false, nil
+	}
+	token, err := DecryptJWT(strings.TrimPrefix(authHeader, "Bearer: "))
+	if err != nil {
+		//do something
+	}
+
+	if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
+		return QueryRow([]string{"id", "pfp", "username", "userID", "password", "timestamp"}, "user", "userID", claims.UserID)
+	} else {
+		fmt.Println("Invalid token")
+	}
+	return false, nil
 }
 
 func HashPassword(password string) {

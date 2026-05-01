@@ -35,6 +35,10 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
 		return
 	}
+	user, err := db.AuthHeaderValidation(r)
+	if err != nil {
+		//do something
+	}
 
 	serverData := map[string]any{
 		"pfp":       data.Pfp,
@@ -47,7 +51,7 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 		//do something
 	}
 	//do some thing abt check the headers for the JWT and then create serverUser
-	CreateServerUser(serverID)
+	CreateServerUser(serverID, user["id"])
 	fmt.Fprintf(w, "created server")
 }
 
