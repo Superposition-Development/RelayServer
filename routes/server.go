@@ -40,6 +40,9 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 		//do something
 	}
 
+	var rawUserID interface{} = user["userID"]
+	userID := fmt.Sprintf("%v", rawUserID) //cooked
+
 	serverData := map[string]any{
 		"pfp":       data.Pfp,
 		"name":      data.Name,
@@ -51,7 +54,7 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 		//do something
 	}
 	//do some thing abt check the headers for the JWT and then create serverUser
-	CreateServerUser(serverID, user["id"])
+	CreateServerUser(serverID, userID)
 	fmt.Fprintf(w, "created server")
 }
 

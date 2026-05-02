@@ -121,7 +121,7 @@ func Query(returnValues []string, tableName string, columnToQuery string, inputV
 }
 
 // INSERT INTO {tableName} ({columns}) VALUES ({..?, ?, ?...}});
-func AddRowWithIDReturn(columnMap map[string]any, tableName string) (any, error) {
+func AddRowWithIDReturn(columnMap map[string]any, tableName string) (string, error) {
 
 	db, err := sql.Open("sqlite", config.DatabaseName+".db")
 	if err != nil {
@@ -165,10 +165,10 @@ func AddRowWithIDReturn(columnMap map[string]any, tableName string) (any, error)
 
 	err = row.Scan(idPtr)
 	if err == sql.ErrNoRows {
-		return nil, nil
+		return "", nil
 	}
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	return id, nil

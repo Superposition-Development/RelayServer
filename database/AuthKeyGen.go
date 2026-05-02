@@ -52,10 +52,10 @@ func EncryptJWT(userID string, expireTimeMin int) (string, error) {
 	return token.SignedString([]byte(config.SecretKey))
 }
 
-func AuthHeaderValidation(r *http.Request) (any, error) {
+func AuthHeaderValidation(r *http.Request) (map[string]any, error) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		return false, nil
+		return nil, errors.New("no auth or smth")
 	}
 	token, err := DecryptJWT(strings.TrimPrefix(authHeader, "Bearer: "))
 	if err != nil {
@@ -65,9 +65,8 @@ func AuthHeaderValidation(r *http.Request) (any, error) {
 	if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
 		return QueryRow([]string{"id", "pfp", "username", "userID", "password", "timestamp"}, "user", "userID", claims.UserID)
 	} else {
-		fmt.Println("Invalid token")
+		return nil, errors.New("idk ts language way too hard")
 	}
-	return false, nil
 }
 
 func HashPassword(password string) {
