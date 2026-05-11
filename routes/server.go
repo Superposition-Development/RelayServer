@@ -58,6 +58,13 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "created server")
 }
 
+func userInServer()
+
+func JoinServer() {
+	CreateServerUser()
+
+}
+
 // @bpServer.route("/createServer",methods=["POST"])
 // @requiresToken
 //     data = request.get_json()
