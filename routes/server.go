@@ -18,6 +18,10 @@ type CreateServerRequest struct {
 	Pfp  string `json:"pfp"`
 }
 
+type JoinServerRequest struct {
+	ServerID string `json:"serverID"`
+}
+
 func CreateServerUser(serverID string, userID string) {
 
 	serverUser := map[string]any{
@@ -58,11 +62,47 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "created server")
 }
 
-func userInServer()
+func userInServer() {}
 
-func JoinServer() {
-	CreateServerUser()
+// #TODO: make this secure / find some way to be like invitation link if it doesn't match this uuid
+// @bpServer.route("/joinServer",methods=["POST"])
+// @requiresToken
+// def joinServer(user):
+//     data = request.get_json()
+//     createServerUser(data["serverID"],user["userID"])
+//     response = jsonify({
+//             "Message":"Joined server"
+//         })
+//     return response
 
+func JoinServer(w http.ResponseWriter, r *http.Request) {
+	var data JoinServerRequest
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
+		return
+	}
+	user, err := db.AuthHeaderValidation(r)
+	if err != nil {
+		//do something
+	}
+
+	var rawUserID interface{} = user["userID"]
+	userID := fmt.Sprintf("%v", rawUserID) //cooked
+
+	// serverData := map[string]any{
+	// 	"pfp":       data.Pfp,
+	// 	"name":      data.Name,
+	// 	"timestamp": time.Now().Unix(),
+	// }
+
+	// serverID, err := db.AddRowWithIDReturn(serverData, "server")
+	// if err != nil {
+	// 	//do something
+	// }
+	// //do some thing abt check the headers for the JWT and then create serverUser
+	CreateServerUser(data.ServerID, userID)
+	fmt.Fprintf(w, "created server")
 }
 
 // @bpServer.route("/createServer",methods=["POST"])
@@ -89,17 +129,6 @@ func JoinServer() {
 // #get all userIDs in a server
 // def getServerUsers(serverID):
 //     return database.queryTableValue("userID","serverUser","serverID",serverID,True)
-
-// #TODO: make this secure / find some way to be like invitation link if it doesn't match this uuid
-// @bpServer.route("/joinServer",methods=["POST"])
-// @requiresToken
-// def joinServer(user):
-//     data = request.get_json()
-//     createServerUser(data["serverID"],user["userID"])
-//     response = jsonify({
-//             "Message":"Joined server"
-//         })
-//     return response
 
 // #TODO: do this for me please with database.py to delte elemets
 // @bpServer.route("/leaveServer",methods=["POST"])
