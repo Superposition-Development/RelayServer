@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"slices"
 	"time"
 )
 
@@ -63,11 +62,14 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "created server")
 }
 
-func UserInServer(serverID string, userID string) {
-	servers, err := db.QueryRow([]string{"serverID"}, "serverUser", "userID", userID)
+func UserInServer(serverID string, userID string) bool {
+	queryMap := map[string]string{
+		"userID": userID,
+	}
+	servers, err := db.QueryRow([]string{"serverID"}, "serverUser", queryMap)
 	fmt.Println(servers)
 	fmt.Println(err)
-	return slices.Contains(servers, serverID)
+	return len(servers) == 0
 	//     return any(row[0] == serverID for row in servers)
 }
 
