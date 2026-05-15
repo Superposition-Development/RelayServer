@@ -20,7 +20,7 @@ func DecryptJWT(tokenString string) (*jwt.Token, error) {
 	secretKey := []byte(config.SecretKey)
 
 	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
 		return secretKey, nil
@@ -57,9 +57,11 @@ func AuthHeaderValidation(r *http.Request) (map[string]any, error) {
 	if authHeader == "" {
 		return nil, errors.New("no auth or smth")
 	}
-	token, err := DecryptJWT(strings.TrimPrefix(authHeader, "Bearer: "))
+	token, err := DecryptJWT(strings.TrimPrefix(authHeader, "Bearer "))
 	if err != nil {
 		//do something
+		fmt.Print("FAH")
+		fmt.Print(err)
 	}
 
 	if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {

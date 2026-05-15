@@ -60,6 +60,7 @@ func registerEndpoints() {
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/signup", routes.Signup)
 	http.HandleFunc("/login", routes.Login)
+	http.HandleFunc("/createServer", routes.CreateServer)
 }
 
 func main() {

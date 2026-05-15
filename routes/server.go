@@ -62,18 +62,9 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "created server")
 }
 
-func userInServer() {}
+func UserInServer() {}
 
-// #TODO: make this secure / find some way to be like invitation link if it doesn't match this uuid
-// @bpServer.route("/joinServer",methods=["POST"])
-// @requiresToken
-// def joinServer(user):
-//     data = request.get_json()
-//     createServerUser(data["serverID"],user["userID"])
-//     response = jsonify({
-//             "Message":"Joined server"
-//         })
-//     return response
+func GetServerUsers() {}
 
 func JoinServer(w http.ResponseWriter, r *http.Request) {
 	var data JoinServerRequest
@@ -90,37 +81,13 @@ func JoinServer(w http.ResponseWriter, r *http.Request) {
 	var rawUserID interface{} = user["userID"]
 	userID := fmt.Sprintf("%v", rawUserID) //cooked
 
-	// serverData := map[string]any{
-	// 	"pfp":       data.Pfp,
-	// 	"name":      data.Name,
-	// 	"timestamp": time.Now().Unix(),
-	// }
-
-	// serverID, err := db.AddRowWithIDReturn(serverData, "server")
-	// if err != nil {
-	// 	//do something
-	// }
-	// //do some thing abt check the headers for the JWT and then create serverUser
 	CreateServerUser(data.ServerID, userID)
 	fmt.Fprintf(w, "created server")
 }
 
-// @bpServer.route("/createServer",methods=["POST"])
-// @requiresToken
-//     data = request.get_json()
+func GetServers() {
 
-//     createdServer = {
-//         "name": data["name"],
-//         "pfp": data["pfp"],
-//         "timestamp": int(time.time())
-//     }
-//     serverID = database.addRowAndReturnRowID(createdServer,"server")
-//     createServerUser(serverID,user["userID"])
-
-//     response = jsonify({
-//             "Message":"Server Created Successfully"
-//         })
-//     return response
+}
 
 // def userInServer(userID,serverID):
 //     servers = database.queryTableValue("serverID","serverUser","userID",userID,True)
