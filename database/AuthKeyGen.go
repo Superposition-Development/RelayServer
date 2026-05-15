@@ -65,7 +65,10 @@ func AuthHeaderValidation(r *http.Request) (map[string]any, error) {
 	}
 
 	if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
-		return QueryRow([]string{"id", "pfp", "username", "userID", "password", "timestamp"}, "user", "userID", claims.UserID)
+		queryMap := map[string]string{
+			"userID": claims.UserID,
+		}
+		return QueryRow([]string{"id", "pfp", "username", "userID", "password", "timestamp"}, "user", queryMap)
 	} else {
 		return nil, errors.New("idk ts language way too hard")
 	}

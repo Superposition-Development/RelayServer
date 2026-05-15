@@ -40,8 +40,8 @@ func InitializeDB() {
 	fmt.Println("Relay DB Initialized")
 }
 
-// SELECT returnValues FROM tableName WHERE columnToQuery = inputValue
-func QueryRow(returnValues []string, tableName string, columnToQuery string, inputValue string) (map[string]any, error) {
+// SELECT returnValues FROM tableName WHERE map[key] = map[value] -> (column,input)
+func QueryRow(returnValues []string, tableName string, whereMap map[string]string) (map[string]any, error) {
 	formattedReturnValues := strings.Join(returnValues, ", ")
 
 	db, err := sql.Open("sqlite", config.DatabaseName+".db")
@@ -50,16 +50,20 @@ func QueryRow(returnValues []string, tableName string, columnToQuery string, inp
 	}
 
 	queryPrompt := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE %s = ?",
+		"SELECT %s FROM %s ",
 		formattedReturnValues,
 		tableName,
-		columnToQuery,
 	)
+
+	for key, value := range whereMap {
+		queryPrompt += fmt.Sprintf("WHERE %s = %s AND", key, value)
+	}
+	strings.TrimSuffix(queryPrompt, "AND")
 
 	values := make([]any, len(returnValues))
 	valuePtrs := make([]any, len(returnValues))
 
-	row := db.QueryRow(queryPrompt, inputValue)
+	row := db.QueryRow(queryPrompt)
 
 	for i := range values {
 		valuePtrs[i] = &values[i]
@@ -81,7 +85,7 @@ func QueryRow(returnValues []string, tableName string, columnToQuery string, inp
 	return resultMap, nil
 }
 
-// SELECT returnValues FROM tableName WHERE columnToQuery = inputValue
+// this probably doesnt work anymore SELECT returnValues FROM tableName WHERE columnToQuery = inputValue
 func Query(returnValues []string, tableName string, columnToQuery string, inputValue string) ([][]any, error) {
 	formattedReturnValues := strings.Join(returnValues, ", ")
 
