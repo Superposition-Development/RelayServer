@@ -61,13 +61,15 @@ func registerEndpoints() {
 	http.HandleFunc("/signup", routes.Signup)
 	http.HandleFunc("/login", routes.Login)
 	http.HandleFunc("/createServer", routes.CreateServer)
+	// http.HandleFunc("")
 }
 
 func main() {
 	database.InitializeConfig()
-	database.TheTrucksAreHere()
+	// database.TheTrucksAreHere()
 	database.InitializeDB()
 	registerEndpoints()
+	routes.UserInServer("1", "user")
 	fmt.Println("Relay Server active on port 8080")
 	handler := enableCORS(http.DefaultServeMux)
 	err := http.ListenAndServe(":8080", handler)

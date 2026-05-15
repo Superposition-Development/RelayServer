@@ -62,7 +62,12 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "created server")
 }
 
-func UserInServer() {}
+func UserInServer(serverID string, userID string) {
+	servers, err := db.Query([]string{"serverID"}, "serverUser", "userID", userID)
+	fmt.Println(servers)
+	fmt.Println(err)
+	//     return any(row[0] == serverID for row in servers)
+}
 
 func GetServerUsers() {}
 
