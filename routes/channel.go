@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 )
 
 type CreateChannelRequest struct {
@@ -29,20 +28,20 @@ func CreateChannel(w http.ResponseWriter, r *http.Request) {
 	userID := fmt.Sprintf("%v", rawUserID) //cooked
 
 	if !UserInServer(data.ServerID, userID) {
-
+		//FAH
 	}
 
-	serverData := map[string]any{
-		"pfp":       data.Pfp,
-		"name":      data.Name,
-		"timestamp": time.Now().Unix(),
+	createdChannel := map[string]any{
+		"name":     data.Name,
+		"serverID": data.ServerID,
 	}
 
-	serverID, err := db.AddRowWithIDReturn(serverData, "server")
-	if err != nil {
-		//do something
+	_, e := db.AddRowWithIDReturn(createdChannel, "channel")
+	if e != nil {
+
 	}
 	//do some thing abt check the headers for the JWT and then create serverUser
-	CreateServerUser(serverID, userID)
 	fmt.Fprintf(w, "created server")
 }
+
+func GetChannels()
