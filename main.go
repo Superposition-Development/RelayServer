@@ -62,7 +62,7 @@ func registerEndpoints() {
 	http.HandleFunc("/login", routes.Login)
 	http.HandleFunc("/createServer", routes.CreateServer)
 	http.HandleFunc("/createChannel", routes.CreateChannel)
-	// http.HandleFunc("")
+	http.HandleFunc("/getChannels", routes.GetChannels)
 }
 
 func main() {

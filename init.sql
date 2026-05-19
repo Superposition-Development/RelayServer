@@ -9,11 +9,11 @@ CREATE TABLE IF NOT EXISTS user (
 
 CREATE TABLE IF NOT EXISTS message (
         id INTEGER PRIMARY KEY,
-        senderID TEXT,
+        userID TEXT,
         channelID INTEGER,
         timestamp INTEGER,
         content TEXT,
-        FOREIGN KEY (senderID) REFERENCES user(userID),
+        FOREIGN KEY (userID) REFERENCES user(userID),
         FOREIGN KEY (channelID) REFERENCES channel(id)
         );
 
