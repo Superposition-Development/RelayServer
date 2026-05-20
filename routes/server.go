@@ -94,8 +94,33 @@ func JoinServer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "created server")
 }
 
-func GetServers() {
+func GetServers(w http.ResponseWriter, r *http.Request) {
+	user, err := db.AuthHeaderValidation(r)
+	if err != nil {
+		//do something
+	}
 
+	var rawUserID interface{} = user["userID"]
+	userID := fmt.Sprintf("%v", rawUserID) //cooked
+
+	serverIDs, err := db.Query([]string{"serverID"}, "serverUser", "userID", []string{userID})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	reformattedServerIDs := []string{}
+
+	for i := 0; i < len(serverIDs); i++ {
+		var serverid interface{} = serverIDs[0][i]
+		reformattedServerIDs = append(reformattedServerIDs, fmt.Sprintf("%v", serverid))
+	}
+
+	servers, err := db.Query([]string{"id", "pfp", "name"}, "server", "id", reformattedServerIDs)
+	for i := 0; i < len(serverIDs); i++ {
+		fmt.Println(servers[0][i])
+	}
+
+	fmt.Fprintf(w, "got servers or smth")
 }
 
 // def userInServer(userID,serverID):

@@ -57,13 +57,9 @@ func QueryRow(returnValues []string, tableName string, whereMap map[string]strin
 
 	for key, value := range whereMap {
 		queryPrompt += fmt.Sprintf(" %s = \"%s\" AND", key, value)
-		// fmt.Println(queryPrompt)
 	}
 
-	fmt.Println(queryPrompt)
-
 	queryPrompt = strings.TrimSuffix(queryPrompt, "AND")
-	fmt.Println(queryPrompt)
 
 	values := make([]any, len(returnValues))
 	valuePtrs := make([]any, len(returnValues))
@@ -98,7 +94,7 @@ func QueryRow(returnValues []string, tableName string, whereMap map[string]strin
 }
 
 // this probably doesnt work anymore SELECT returnValues FROM tableName WHERE columnToQuery = inputValue
-func Query(returnValues []string, tableName string, columnToQuery string, inputValue string) ([][]any, error) {
+func Query(returnValues []string, tableName string, columnToQuery string, inputValues []string) ([][]any, error) {
 	formattedReturnValues := strings.Join(returnValues, ", ")
 
 	db, err := sql.Open("sqlite", config.DatabaseName+".db")
@@ -106,14 +102,27 @@ func Query(returnValues []string, tableName string, columnToQuery string, inputV
 		log.Fatalf("Couldn't open database: %v", err)
 	}
 
+	formattedInputs := strings.TrimPrefix("'"+strings.Join(inputValues, "', '"), "'")
+
+	if len(inputValues) == 1 {
+		formattedInputs = fmt.Sprintf("'%s'", inputValues[0])
+	}
+
 	queryPrompt := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE %s = ?",
+		"SELECT %s FROM %s WHERE %s IN (%s)",
 		formattedReturnValues,
 		tableName,
 		columnToQuery,
+		formattedInputs,
 	)
 
-	rows, err := db.Query(queryPrompt, inputValue)
+	fmt.Println(queryPrompt)
+
+	rows, err := db.Query(queryPrompt)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	var results [][]any
 

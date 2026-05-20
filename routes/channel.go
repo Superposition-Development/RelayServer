@@ -69,6 +69,7 @@ func GetChannels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// channels, err := db.Query([]string{"name", "id"}, "channel", "serverID", data.ServerID)
+	// channels.
 	// fmt.Fprintf(w,channels)
 	//this part do something with it
 
