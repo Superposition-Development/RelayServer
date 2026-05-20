@@ -39,3 +39,5 @@ CREATE TABLE IF NOT EXISTS serverUser (
     FOREIGN KEY (serverID) REFERENCES server(id),
     FOREIGN KEY (userID) REFERENCES user(userID)
     );
+
+SELECT userID, password FROM user WHERE password = "password" AND userID = "user"

@@ -50,20 +50,26 @@ func QueryRow(returnValues []string, tableName string, whereMap map[string]strin
 	}
 
 	queryPrompt := fmt.Sprintf(
-		"SELECT %s FROM %s ",
+		"SELECT %s FROM %s WHERE",
 		formattedReturnValues,
 		tableName,
 	)
 
 	for key, value := range whereMap {
-		queryPrompt += fmt.Sprintf("WHERE %s = %s AND", key, value)
+		queryPrompt += fmt.Sprintf(" %s = \"%s\" AND", key, value)
+		// fmt.Println(queryPrompt)
 	}
-	strings.TrimSuffix(queryPrompt, "AND")
+
+	fmt.Println(queryPrompt)
+
+	queryPrompt = strings.TrimSuffix(queryPrompt, "AND")
+	fmt.Println(queryPrompt)
 
 	values := make([]any, len(returnValues))
 	valuePtrs := make([]any, len(returnValues))
 
 	row := db.QueryRow(queryPrompt)
+	// fmt.Print(row)
 
 	for i := range values {
 		valuePtrs[i] = &values[i]
@@ -71,15 +77,21 @@ func QueryRow(returnValues []string, tableName string, whereMap map[string]strin
 
 	err = row.Scan(valuePtrs...)
 	if err == sql.ErrNoRows {
+		fmt.Println("FAH it has no rows")
 		return nil, nil
 	}
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
 	resultMap := make(map[string]any)
 	for i, col := range returnValues {
 		resultMap[col] = values[i]
+	}
+
+	for key, value := range resultMap {
+		fmt.Printf("Key: %s, Value: %d\n", key, value)
 	}
 
 	return resultMap, nil
@@ -190,7 +202,7 @@ func TheTrucksAreHere() {
 }
 
 // SELECT columnToQuery FROM tableName ORDER BY columnToOrder ascending, OFFSET rowOffset ROWS FETCH NEXT rowFetchAmount ROWS ONLY
-func PaginatedQuery(returnValues []string, columnToQuery string, tableName string, columnToOrder string, ascending bool, rowOffset string, rowFetchAmount string, inputValue string) {
+func PaginatedQuery(returnValues []string, columnToQuery string, tableName string, columnToOrder string, ascending bool, rowOffset string, rowFetchAmount string, inputValue string) ([][]any, error) {
 	orderKeyword := "DESC"
 	if ascending {
 		orderKeyword = "ASC"
@@ -202,27 +214,30 @@ func PaginatedQuery(returnValues []string, columnToQuery string, tableName strin
 		orderKeyword,
 		rowOffset,
 		rowFetchAmount)
+	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	if err != nil {
+		log.Fatalf("Couldn't open database: %v", err)
+	}
+	rows, err := db.Query(paginationPrompt)
+
+	var results [][]any
+
+	for rows.Next() {
+		values := make([]any, len(returnValues))
+		valuePtrs := make([]any, len(returnValues))
+
+		for i := range values {
+			valuePtrs[i] = &values[i]
+		}
+
+		err := rows.Scan(valuePtrs...)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, values)
+	}
+
+	return results, nil
 
 }
-
-/*
-def addRowAndReturnRowID(columnValueMap, tableName):
-    connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
-    cursor = connection.cursor()
-
-    columns = ", ".join(columnValueMap.keys())
-    placeholders = ", ".join(["?"] * len(columnValueMap))
-    values = tuple(columnValueMap.values())
-    # print(values)
-
-    cursor.execute(f""" \
-        INSERT INTO {tableName} ({columns})
-        VALUES ({placeholders});
-         """, values)
-
-    cursor.execute("SELECT last_insert_rowid()")
-    result = cursor.fetchone()
-    connection.commit()
-    connection.close()
-    return result[0]
-*/

@@ -76,34 +76,22 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*
-	   // @bpAuth.route("/login",methods=["POST"])
-	   // def login():
-	   //     data = request.get_json()
-	   //     userQuery = database.queryTableValue(["password","userID"],"user","userID",data["userID"])
-	   //     if(userQuery == None):
-	   //         return jsonify({"Error":"Invalid Credentials"}) #sure they could just check with /signup to scan for userIDs, but wtv, hopefully anti brute force is written
-	   //     if(not(check_password_hash(userQuery["password"],data["password"])) or userQuery["userID"] != data["userID"]):
-	   //         return jsonify({"Error":"Invalid Credentials"})
-
-	   //     key = AuthKeyGen.encryptJWT({"userID":data["userID"]},60)
-	   //     response = jsonify({
-	   //             "RelayJWT":key,
-	   //             "userID":data["userID"]
-	   //         })
-	   //     return response
-	*/
-
 	queryMap := map[string]string{
-		"userID": data.UserID,
+		"userID":   data.UserID,
+		"password": data.Password,
 	}
 	row, err := db.QueryRow([]string{"userID", "password"}, "user", queryMap)
 	if len(row) == 0 {
 		http.Error(w, "No User Found", http.StatusUnauthorized)
 	}
-	if data.Password != row["password"] { //
-		http.Error(w, "Incorrect credentials", http.StatusUnauthorized)
-	}
+	// a := map[string]interface{}{"appId": 2, "fcmServerKey": "keyTestTest", "name": "com.app", "version": []int{1, 2, 3}, "xyz": 3}
+	// bs, _ := json.Marshal(row)
+	// fmt.Println(string(bs))
+	// fmt.Print(data.Password)
+	// fmt.Print(row)
+	// if data.Password != row["password"] { //
+	// 	http.Error(w, "Incorrect credentials", http.StatusUnauthorized)
+	// }
 
 	w.Header().Set("Content-Type", "application/json")
 	jwt, err := db.EncryptJWT(data.UserID, 60)
