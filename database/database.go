@@ -189,6 +189,22 @@ func TheTrucksAreHere() {
 	db.Exec(executePrompt)
 }
 
+// SELECT columnToQuery FROM tableName ORDER BY columnToOrder ascending, OFFSET rowOffset ROWS FETCH NEXT rowFetchAmount ROWS ONLY
+func PaginatedQuery(returnValues []string, columnToQuery string, tableName string, columnToOrder string, ascending bool, rowOffset string, rowFetchAmount string, inputValue string) {
+	orderKeyword := "DESC"
+	if ascending {
+		orderKeyword = "ASC"
+	}
+	paginationPrompt := fmt.Sprintf("SELECT %s FROM %s ORDER BY %s %s OFFSET %s ROWS FETCH NEXT %s ROWS ONLY;",
+		columnToQuery,
+		tableName,
+		columnToOrder,
+		orderKeyword,
+		rowOffset,
+		rowFetchAmount)
+
+}
+
 /*
 def addRowAndReturnRowID(columnValueMap, tableName):
     connection = sqlite3.connect(f"{init.DATABASE_NAME}.db")
