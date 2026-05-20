@@ -25,6 +25,7 @@ func SendMessage(w http.ResponseWriter, r *http.Request) {
 	var data SendMessageRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
 		return
 	}

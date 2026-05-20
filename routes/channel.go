@@ -20,6 +20,7 @@ func CreateChannel(w http.ResponseWriter, r *http.Request) {
 	var data CreateChannelRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
 		return
 	}
