@@ -94,37 +94,39 @@ func QueryRow(returnValues []string, tableName string, whereMap map[string]strin
 }
 
 // this probably doesnt work anymore SELECT returnValues FROM tableName WHERE columnToQuery = inputValue
-func Query(returnValues []string, tableName string, columnToQuery string, inputValues []string) ([][]any, error) {
+func Query(returnValues []string, tableName string, columnToQuery string, inputValues []string) ([]map[string]any, error) {
 	formattedReturnValues := strings.Join(returnValues, ", ")
 
 	db, err := sql.Open("sqlite", config.DatabaseName+".db")
 	if err != nil {
-		log.Fatalf("Couldn't open database: %v", err)
+		return nil, err
 	}
+	defer db.Close()
 
-	formattedInputs := strings.TrimPrefix("'"+strings.Join(inputValues, "', '"), "'")
-
-	if len(inputValues) == 1 {
-		formattedInputs = fmt.Sprintf("'%s'", inputValues[0])
-	}
+	placeholders := strings.TrimRight(strings.Repeat("?,", len(inputValues)), ",")
 
 	queryPrompt := fmt.Sprintf(
 		"SELECT %s FROM %s WHERE %s IN (%s)",
 		formattedReturnValues,
 		tableName,
 		columnToQuery,
-		formattedInputs,
+		placeholders,
 	)
 
 	fmt.Println(queryPrompt)
 
-	rows, err := db.Query(queryPrompt)
-
-	if err != nil {
-		fmt.Println(err)
+	args := make([]any, len(inputValues))
+	for i, v := range inputValues {
+		args[i] = v
 	}
 
-	var results [][]any
+	rows, err := db.Query(queryPrompt, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []map[string]any
 
 	for rows.Next() {
 		values := make([]any, len(returnValues))
@@ -139,7 +141,13 @@ func Query(returnValues []string, tableName string, columnToQuery string, inputV
 			return nil, err
 		}
 
-		results = append(results, values)
+		rowMap := make(map[string]any)
+
+		for i, colName := range returnValues {
+			rowMap[colName] = values[i]
+		}
+
+		results = append(results, rowMap)
 	}
 
 	return results, nil

@@ -111,16 +111,24 @@ func GetServers(w http.ResponseWriter, r *http.Request) {
 	reformattedServerIDs := []string{}
 
 	for i := 0; i < len(serverIDs); i++ {
-		var serverid interface{} = serverIDs[0][i]
+		var serverid interface{} = serverIDs[i]["serverID"]
 		reformattedServerIDs = append(reformattedServerIDs, fmt.Sprintf("%v", serverid))
 	}
 
 	servers, err := db.Query([]string{"id", "pfp", "name"}, "server", "id", reformattedServerIDs)
-	for i := 0; i < len(serverIDs); i++ {
-		fmt.Println(servers[0][i])
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	fmt.Fprintf(w, "got servers or smth")
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(servers)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // def userInServer(userID,serverID):

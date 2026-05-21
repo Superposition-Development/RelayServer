@@ -68,7 +68,11 @@ func GetChannels(w http.ResponseWriter, r *http.Request) {
 		//FAH
 	}
 
-	// channels, err := db.Query([]string{"name", "id"}, "channel", "serverID", data.ServerID)
+	channels, err := db.Query([]string{"name", "id"}, "channel", "serverID", []string{data.ServerID})
+	// for i := 0; i < len(channels); i++ {
+	// 	fmt.Println(channels[0])
+	// }
+	fmt.Println(channels)
 	// channels.
 	// fmt.Fprintf(w,channels)
 	//this part do something with it
