@@ -69,12 +69,20 @@ func GetChannels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	channels, err := db.Query([]string{"name", "id"}, "channel", "serverID", []string{data.ServerID})
-	// for i := 0; i < len(channels); i++ {
-	// 	fmt.Println(channels[0])
-	// }
-	fmt.Println(channels)
-	// channels.
-	// fmt.Fprintf(w,channels)
-	//this part do something with it
+
+	// servers, err := db.Query([]string{"id", "pfp", "name"}, "server", "id", reformattedServerIDs)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(channels)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 }
