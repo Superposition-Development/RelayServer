@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+//
+
 type CreateChannelRequest struct {
 	Name     string `json:"name"`
 	ServerID string `json:"serverID"`
