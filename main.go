@@ -66,6 +66,7 @@ func registerEndpoints() {
 	http.HandleFunc("/getChannels", routes.GetChannels)
 	http.HandleFunc("/sendMessage", routes.SendMessage)
 	http.HandleFunc("/getMessages", routes.GetChannelMessage)
+	http.HandleFunc("/validateUserToken", routes.ValidateUserToken)
 }
 
 func main() {

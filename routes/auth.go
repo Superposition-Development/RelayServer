@@ -68,6 +68,28 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// this function is an endpoint is only meant to be used on boot to determine if the user is even logged in on startup
+func ValidateUserToken(w http.ResponseWriter, r *http.Request) {
+
+	user, err := db.AuthHeaderValidation(r)
+	if err != nil {
+		fmt.Println("fortnite funnys")
+	}
+	fmt.Println(user)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	// signup := Response{"status": "idk"}
+	// response, err := json.Marshal(signup)
+
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// w.Write(response)
+}
+
 func Login(w http.ResponseWriter, r *http.Request) {
 	var data LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
