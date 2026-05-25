@@ -229,7 +229,7 @@ func PaginatedQuery(
 	currentRowValue any,
 	ascending bool,
 	rowFetchAmount int,
-) ([][]any, error) {
+) ([]map[string]any, error) {
 	orderKeyword := "DESC"
 	comparisonKeyword := "<"
 	if ascending {
@@ -272,8 +272,12 @@ func PaginatedQuery(
 		currentRowValue,
 		rowFetchAmount,
 	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	var results [][]any
+	var results []map[string]any
 
 	for rows.Next() {
 		values := make([]any, len(returnValues))
@@ -288,7 +292,13 @@ func PaginatedQuery(
 			return nil, err
 		}
 
-		results = append(results, values)
+		rowMap := make(map[string]any)
+
+		for i, colName := range returnValues {
+			rowMap[colName] = values[i]
+		}
+
+		results = append(results, rowMap)
 	}
 
 	return results, nil
