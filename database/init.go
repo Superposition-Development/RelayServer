@@ -9,10 +9,11 @@ import (
 )
 
 type Config struct {
-	ServerName     string `env:"SERVER_NAME"`
-	DatabaseName   string `env:"DATABASE_NAME"`
-	SecretKey      string `env:"SECRET_KEY"`
-	SignupPassword string `env:"SIGNUP_PASSWORD"`
+	ServerName          string `env:"SERVER_NAME"`
+	DatabaseName        string `env:"DATABASE_NAME"`
+	SecretKey           string `env:"SECRET_KEY"`
+	SignupPassword      string `env:"SIGNUP_PASSWORD"`
+	MaxMessagesPerQuery int    `env:"MAX_MESSAGES_PER_QUERY"`
 	// SignupPasswordRequired bool
 	// UsingCustomDBPath bool
 }

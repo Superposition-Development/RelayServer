@@ -211,24 +211,67 @@ func TheTrucksAreHere() {
 	db.Exec(executePrompt)
 }
 
-// SELECT columnToQuery FROM tableName ORDER BY columnToOrder ascending, OFFSET rowOffset ROWS FETCH NEXT rowFetchAmount ROWS ONLY
-func PaginatedQuery(returnValues []string, columnToQuery string, tableName string, columnToOrder string, ascending bool, rowOffset string, rowFetchAmount string, inputValue string) ([][]any, error) {
+/*
+SELECT returnValues
+FROM tableName
+WHERE columnnToQuery = ?(columToQueryInput)
+AND columnToOrder moreThan[< / >] currentRowValue
+ORDER BY columnToOrder ascending[DESC/ASC]
+LIMIT rowFetchAmount;
+*/
+func PaginatedQuery(
+	returnValues []string,
+	tableName string,
+	columnToQuery string,
+	columnToQueryInput string,
+	columnToOrder string,
+	moreThan bool,
+	currentRowValue any,
+	ascending bool,
+	rowFetchAmount int,
+) ([][]any, error) {
 	orderKeyword := "DESC"
+	comparisonKeyword := "<"
 	if ascending {
 		orderKeyword = "ASC"
 	}
-	paginationPrompt := fmt.Sprintf("SELECT %s FROM %s ORDER BY %s %s OFFSET %s ROWS FETCH NEXT %s ROWS ONLY;",
-		columnToQuery,
+	if moreThan {
+		comparisonKeyword = ">"
+	}
+
+	if rowFetchAmount > config.MaxMessagesPerQuery {
+		rowFetchAmount = config.MaxMessagesPerQuery
+	}
+
+	formattedReturnValues := strings.Join(returnValues, ", ")
+
+	queryPrompt := fmt.Sprintf(
+		`SELECT %s
+		FROM %s
+		WHERE %s = ?
+		AND %s %s ?
+		ORDER BY %s %s
+		LIMIT ?`,
+		formattedReturnValues,
 		tableName,
+		columnToQuery,
+		columnToOrder,
+		comparisonKeyword,
 		columnToOrder,
 		orderKeyword,
-		rowOffset,
-		rowFetchAmount)
+	)
+
 	db, err := sql.Open("sqlite", config.DatabaseName+".db")
 	if err != nil {
 		log.Fatalf("Couldn't open database: %v", err)
 	}
-	rows, err := db.Query(paginationPrompt)
+
+	rows, err := db.Query(
+		queryPrompt,
+		columnToQueryInput,
+		currentRowValue,
+		rowFetchAmount,
+	)
 
 	var results [][]any
 
