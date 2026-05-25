@@ -67,7 +67,6 @@ func UserInServer(serverID string, userID string) bool {
 		"userID": userID,
 	}
 	servers, err := db.QueryRow([]string{"serverID"}, "serverUser", queryMap)
-	fmt.Println(servers)
 	fmt.Println(err)
 	return len(servers) == 0
 	//     return any(row[0] == serverID for row in servers)

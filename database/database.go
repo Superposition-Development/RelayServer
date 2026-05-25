@@ -113,8 +113,6 @@ func Query(returnValues []string, tableName string, columnToQuery string, inputV
 		placeholders,
 	)
 
-	fmt.Println(queryPrompt)
-
 	args := make([]any, len(inputValues))
 	for i, v := range inputValues {
 		args[i] = v

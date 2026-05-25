@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -27,7 +26,6 @@ func DecryptJWT(tokenString string) (*jwt.Token, error) {
 	})
 
 	if err != nil {
-		fmt.Println("Error parsing token:", err)
 		return nil, err
 	}
 
@@ -55,13 +53,11 @@ func EncryptJWT(userID string, expireTimeMin int) (string, error) {
 func AuthHeaderValidation(r *http.Request) (map[string]any, error) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
-		return nil, errors.New("no auth or smth")
+		return nil, errors.New("Authorization Header not found")
 	}
 	token, err := DecryptJWT(strings.TrimPrefix(authHeader, "Bearer "))
 	if err != nil {
-		//do something
-		fmt.Print("FAH")
-		fmt.Print(err)
+		return nil, err
 	}
 
 	if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
