@@ -65,7 +65,6 @@ func QueryRow(returnValues []string, tableName string, whereMap map[string]strin
 	valuePtrs := make([]any, len(returnValues))
 
 	row := db.QueryRow(queryPrompt)
-	// fmt.Print(row)
 
 	for i := range values {
 		valuePtrs[i] = &values[i]
@@ -84,10 +83,6 @@ func QueryRow(returnValues []string, tableName string, whereMap map[string]strin
 	resultMap := make(map[string]any)
 	for i, col := range returnValues {
 		resultMap[col] = values[i]
-	}
-
-	for key, value := range resultMap {
-		fmt.Printf("Key: %s, Value: %d\n", key, value)
 	}
 
 	return resultMap, nil
