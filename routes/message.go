@@ -15,9 +15,11 @@ type SendMessageRequest struct {
 }
 
 type GetChannelMessageRequest struct {
-	Offset    string `json:"offset"`
+	MoreThan  string `json:"moreThan"`
 	ChannelID string `json:"channelID"`
 	ServerID  string `json:"serverID"`
+	MessageID string `json:"messageID"`
+	Ascending string `json:"ascending"`
 }
 
 func SendMessage(w http.ResponseWriter, r *http.Request) {
@@ -69,24 +71,21 @@ func GetChannelMessage(w http.ResponseWriter, r *http.Request) {
 		//FAH
 	}
 
-	/*
+	messages, err := db.PaginatedQuery([]string{"*"}, "message", "channelID", data.ChannelID, "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", 15)
 
-	   queryOffset = data["offset"]
-	   queryChannel = data["channel"]
-	   dbMessageList = Message.query.filter_by(channel=queryChannel).order_by(db.desc(Message.id)).offset(queryOffset).limit(5).all()
-	   messageList = []
-	   for message in dbMessageList:
-	       messageUser = Users.query.filter_by(id=message.user).first()
-	       messageList.append({
-	           'name':messageUser.username,
-	           'pfp':messageUser.pfp,
-	           'message':message.content,
-	           'date':message.date,
-	           'userID':messageUser.userID
-	       })
-	   channelName = Channel.query.filter_by(id=queryChannel).first().name
-	   return jsonify({'messages': messageList,
-	                   "channelName":channelName})
+	// servers, err := db.Query([]string{"id", "pfp", "name"}, "server", "id", reformattedServerIDs)
 
-	*/
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(messages)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 }
