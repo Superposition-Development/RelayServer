@@ -71,7 +71,21 @@ func GetChannelMessage(w http.ResponseWriter, r *http.Request) {
 		//FAH
 	}
 
-	messages, err := db.PaginatedQuery([]string{"*"}, "message", "channelID", data.ChannelID, "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", 15)
+	messages, err := db.PaginatedQuery([]string{"userID"}, "message", "channelID", data.ChannelID, "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", 15)
+	userContentMap := make(map[string]map[string]any)
+
+	for _, value := range messages {
+		var rawUserID interface{} = value["userID"]
+		userID := fmt.Sprintf("%v", rawUserID) //cooked
+		_, ok := userContentMap[userID]
+		if ok {
+			value["pfp"] = userContentMap["pfp"]
+			value["name"] = userContentMap["string"]
+		} else {
+			userContentMap[userID] = make(map[string]any)
+			//todo here: query the user table and grab the pfp and name data and set it here
+		}
+	}
 
 	// servers, err := db.Query([]string{"id", "pfp", "name"}, "server", "id", reformattedServerIDs)
 
