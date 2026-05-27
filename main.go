@@ -74,14 +74,6 @@ func main() {
 	// database.TheTrucksAreHere()
 	database.InitializeDB()
 	registerEndpoints()
-	// routes.UserInServer("1", "user")
-	// database.Query([]string{"name", "id"}, "channel", "serverID", "1")
-	// channel := map[string]any{
-	// 	"name":     "fried",
-	// 	"serverID": "1",
-	// }
-
-	// database.AddRowWithIDReturn(channel, "channel")
 
 	fmt.Println("Relay Server active on port 8080")
 	handler := enableCORS(http.DefaultServeMux)

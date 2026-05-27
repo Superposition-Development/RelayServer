@@ -29,11 +29,6 @@ func DecryptJWT(tokenString string) (*jwt.Token, error) {
 		return nil, err
 	}
 
-	// if claims, ok := token.Claims.(*TokenClaims); ok && token.Valid {
-	// 	fmt.Println("Token valid for user:", claims.UserID)
-	// } else {
-	// 	fmt.Println("Invalid token")
-	// }
 	return token, nil
 }
 

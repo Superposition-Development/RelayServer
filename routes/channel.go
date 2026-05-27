@@ -7,8 +7,6 @@ import (
 	"net/http"
 )
 
-//
-
 type CreateChannelRequest struct {
 	Name     string `json:"name"`
 	ServerID string `json:"serverID"`
@@ -71,8 +69,6 @@ func GetChannels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	channels, err := db.Query([]string{"name", "id"}, "channel", "serverID", []string{data.ServerID})
-
-	// servers, err := db.Query([]string{"id", "pfp", "name"}, "server", "id", reformattedServerIDs)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

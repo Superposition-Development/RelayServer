@@ -97,8 +97,6 @@ func GetChannelMessage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// servers, err := db.Query([]string{"id", "pfp", "name"}, "server", "id", reformattedServerIDs)
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
