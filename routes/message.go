@@ -71,7 +71,7 @@ func GetChannelMessage(w http.ResponseWriter, r *http.Request) {
 		//FAH
 	}
 
-	messages, err := db.PaginatedQuery([]string{"userID"}, "message", "channelID", data.ChannelID, "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", 15)
+	messages, err := db.PaginatedQuery([]string{"userID", "content", "id", "timestamp"}, "message", "channelID", data.ChannelID, "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", 15)
 	userContentMap := make(map[string]map[string]any)
 
 	for _, message := range messages {
@@ -88,10 +88,10 @@ func GetChannelMessage(w http.ResponseWriter, r *http.Request) {
 			}
 			userData, err := db.QueryRow([]string{"pfp", "username"}, "user", queryMap)
 			if err != nil {
-				fmt.Println(err)
+				// fmt.Println(err)
 			}
 			userContentMap[userID]["pfp"] = userData["pfp"]
-			userContentMap[userID]["name"] = userData["name"]
+			userContentMap[userID]["name"] = userData["username"]
 			message["pfp"] = userData["pfp"]
 			message["name"] = userData["name"]
 		}
