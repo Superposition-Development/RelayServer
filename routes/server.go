@@ -52,7 +52,7 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		//do something
 	}
-	//do some thing abt check the headers for the JWT and then create serverUser
+
 	CreateServerUser(serverID, userID)
 	fmt.Fprintf(w, "created server")
 }
