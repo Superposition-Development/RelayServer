@@ -1,10 +1,12 @@
 package main
 
 import (
-	database "RelayServer/database"
+	db "RelayServer/database"
 	routes "RelayServer/routes"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -12,6 +14,16 @@ import (
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
+
+type Client struct {
+	ID   string
+	Conn *websocket.Conn
+}
+
+var (
+	clients = make(map[string]*Client)
+	mu      sync.RWMutex
+)
 
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -35,20 +47,33 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer ws.Close()
-
+	var data map[string]string
 	for {
 		_, msg, err := ws.ReadMessage()
 		if err != nil {
-			fmt.Println("read error:", err)
 			break
 		}
-		fmt.Printf("Received: %s\n", msg)
 
-		if err := ws.WriteMessage(websocket.TextMessage, msg); err != nil {
-			fmt.Println("write error:", err)
-			break
+		json.Unmarshal(msg, &data)
+		switch data["message"] {
+		case "register":
+			user, err := db.AuthValidation(data["authKey"])
+			if err != nil {
+				//do something
+			}
+			var rawUserID interface{} = user["userID"]
+			userID := fmt.Sprintf("%v", rawUserID)
+			mu.Lock()
+			clients[userID] = &Client{
+				ID:   userID,
+				Conn: ws,
+			}
+			mu.Unlock()
+		case "sendMessage":
+
 		}
 	}
+
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -70,9 +95,9 @@ func registerEndpoints() {
 }
 
 func main() {
-	database.InitializeConfig()
+	db.InitializeConfig()
 	// database.TheTrucksAreHere()
-	database.InitializeDB()
+	db.InitializeDB()
 	registerEndpoints()
 
 	fmt.Println("Relay Server active on port 8080")

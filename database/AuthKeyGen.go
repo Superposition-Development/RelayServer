@@ -50,7 +50,11 @@ func AuthHeaderValidation(r *http.Request) (map[string]any, error) {
 	if authHeader == "" {
 		return nil, errors.New("Authorization Header not found")
 	}
-	token, err := DecryptJWT(strings.TrimPrefix(authHeader, "Bearer "))
+	return AuthValidation(strings.TrimPrefix(authHeader, "Bearer "))
+}
+
+func AuthValidation(JWT string) (map[string]any, error) {
+	token, err := DecryptJWT(JWT)
 	if err != nil {
 		return nil, err
 	}
