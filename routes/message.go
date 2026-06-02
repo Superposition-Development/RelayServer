@@ -8,11 +8,11 @@ import (
 	"time"
 )
 
-type SendMessageRequest struct {
-	ServerID  string `json:"serverID"`
-	ChannelID string `json:"channelID"`
-	Content   string `json:"content"`
-}
+// type SendMessageRequest struct {
+// 	ServerID  string `json:"serverID"`
+// 	ChannelID string `json:"channelID"`
+// 	Content   string `json:"content"`
+// }
 
 type GetChannelMessageRequest struct {
 	MoreThan  string `json:"moreThan"`
@@ -22,16 +22,9 @@ type GetChannelMessageRequest struct {
 	Ascending string `json:"ascending"`
 }
 
-func SendMessage(w http.ResponseWriter, r *http.Request) {
+func SendMessage(serverID string, channelID string, content string, JWT string) {
 
-	var data SendMessageRequest
-	err := json.NewDecoder(r.Body).Decode(&data)
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
-		return
-	}
-	user, err := db.AuthHeaderValidation(r)
+	user, err := db.AuthValidation(JWT)
 	if err != nil {
 		//do something
 	}
@@ -39,15 +32,15 @@ func SendMessage(w http.ResponseWriter, r *http.Request) {
 	var rawUserID interface{} = user["userID"]
 	userID := fmt.Sprintf("%v", rawUserID) //cooked
 
-	if !UserInServer(data.ServerID, userID) {
+	if !UserInServer(serverID, userID) {
 		//FAH
 	}
 
 	newMessage := map[string]any{
-		"channelID": data.ChannelID,
+		"channelID": channelID,
 		"userID":    userID,
 		"timestamp": time.Now().Unix(),
-		"content":   data.Content,
+		"content":   content,
 	}
 	db.AddRowWithIDReturn(newMessage, "message")
 }

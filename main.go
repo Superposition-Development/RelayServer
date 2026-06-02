@@ -70,7 +70,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			}
 			mu.Unlock()
 		case "sendMessage":
-
+			routes.SendMessage(data["serverID"], data["channelID"], data["content"], data["authKey"])
 		}
 	}
 
@@ -89,7 +89,6 @@ func registerEndpoints() {
 	http.HandleFunc("/createServer", routes.CreateServer)
 	http.HandleFunc("/createChannel", routes.CreateChannel)
 	http.HandleFunc("/getChannels", routes.GetChannels)
-	http.HandleFunc("/sendMessage", routes.SendMessage)
 	http.HandleFunc("/getMessages", routes.GetChannelMessage)
 	http.HandleFunc("/validateUserToken", routes.ValidateUserToken)
 }
