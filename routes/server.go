@@ -66,7 +66,17 @@ func UserInServer(serverID string, userID string) bool {
 	return len(servers) == 0
 }
 
-func GetServerUsers() {}
+func GetServerUsers(serverID string) ([]string, error) {
+	userMap, err := db.Query([]string{"userID"}, "serverUser", "serverID", []string{serverID})
+	if err != nil {
+		return nil, err
+	}
+	var userIDs []string
+	for _, value := range userMap {
+		userIDs = append(userIDs, fmt.Sprintf("%v", value["userID"]))
+	}
+	return userIDs, nil
+}
 
 func JoinServer(w http.ResponseWriter, r *http.Request) {
 	var data JoinServerRequest
@@ -77,7 +87,7 @@ func JoinServer(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := db.AuthHeaderValidation(r)
 	if err != nil {
-		//do something
+		fmt.Println(err)
 	}
 
 	var rawUserID interface{} = user["userID"]

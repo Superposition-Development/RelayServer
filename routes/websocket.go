@@ -60,6 +60,12 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			mu.Unlock()
 		case "sendMessage":
 			SendMessage(data["serverID"], data["channelID"], data["content"], data["authKey"])
+			users, err := GetServerUsers(data["serverID"])
+			if err != nil {
+
+			}
+			//for loop through users
+
 		}
 	}
 
