@@ -44,14 +44,14 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		}
 
 		json.Unmarshal(msg, &data)
+		user, err := db.AuthValidation(data["authKey"])
+		if err != nil {
+			//do something
+		}
+		var rawUserID interface{} = user["userID"]
+		userID := fmt.Sprintf("%v", rawUserID)
 		switch data["message"] {
 		case "register":
-			user, err := db.AuthValidation(data["authKey"])
-			if err != nil {
-				//do something
-			}
-			var rawUserID interface{} = user["userID"]
-			userID := fmt.Sprintf("%v", rawUserID)
 			mu.Lock()
 			clients[userID] = &Client{
 				ID:   userID,
@@ -59,12 +59,32 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			}
 			mu.Unlock()
 		case "sendMessage":
-			SendMessage(data["serverID"], data["channelID"], data["content"], data["authKey"])
+			messageID, err := SendMessage(data["serverID"], data["channelID"], data["content"], data["authKey"])
 			users, err := GetServerUsers(data["serverID"])
+			queryMap := map[string]string{
+				"userID": userID,
+			}
+			senderData, err := db.QueryRow([]string{"pfp", "username"}, "user", queryMap)
 			if err != nil {
 
 			}
-			//for loop through users
+			for _, value := range users {
+				client, ok := clients[value]
+				if !ok {
+					fmt.Printf("user %s not connected\n", value)
+					continue
+				}
+				SendWebsocketMessage(client.Conn, WebsocketMessage{
+					Type: "recieveMessage",
+					Data: map[string]any{
+						"id":        messageID,
+						"name":      senderData["username"],
+						"pfp":       senderData["pfp"],
+						"content":   data["content"],
+						"timestamp": data["timestamp"],
+					},
+				})
+			}
 
 		}
 	}

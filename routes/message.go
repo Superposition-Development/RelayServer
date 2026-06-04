@@ -22,7 +22,7 @@ type GetChannelMessageRequest struct {
 	Ascending string `json:"ascending"`
 }
 
-func SendMessage(serverID string, channelID string, content string, JWT string) {
+func SendMessage(serverID string, channelID string, content string, JWT string) (string, error) {
 
 	user, err := db.AuthValidation(JWT)
 	if err != nil {
@@ -42,7 +42,7 @@ func SendMessage(serverID string, channelID string, content string, JWT string) 
 		"timestamp": time.Now().Unix(),
 		"content":   content,
 	}
-	db.AddRowWithIDReturn(newMessage, "message")
+	return db.AddRowWithIDReturn(newMessage, "message")
 }
 
 func GetChannelMessage(w http.ResponseWriter, r *http.Request) {
