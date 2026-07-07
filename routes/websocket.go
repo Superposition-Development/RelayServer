@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -74,14 +75,14 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 					fmt.Printf("user %s not connected\n", value)
 					continue
 				}
-				SendWebsocketMessage(client.Conn, WebsocketMessage{
+				SendWebsocketMessage(client.Conn, WebsocketMessage{ //this is NOT good practice and needs to be based on what the database got
 					Type: "recieveMessage",
 					Data: map[string]any{
 						"id":        messageID,
 						"name":      senderData["username"],
 						"pfp":       senderData["pfp"],
 						"content":   data["content"],
-						"timestamp": data["timestamp"],
+						"timestamp": time.Now().Unix(),
 					},
 				})
 			}
