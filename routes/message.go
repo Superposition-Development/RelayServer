@@ -86,7 +86,7 @@ func GetChannelMessage(w http.ResponseWriter, r *http.Request) {
 			userContentMap[userID]["pfp"] = userData["pfp"]
 			userContentMap[userID]["name"] = userData["username"]
 			message["pfp"] = userData["pfp"]
-			message["name"] = userData["name"]
+			message["name"] = userData["username"]
 		}
 	}
 
