@@ -33,25 +33,40 @@ var (
 func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println(err)
+
 		return
 	}
 	defer ws.Close()
-	var data map[string]string
+
 	for {
 		_, msg, err := ws.ReadMessage()
 		if err != nil {
+
 			break
 		}
 
-		json.Unmarshal(msg, &data)
-		user, err := db.AuthValidation(data["authKey"])
-		if err != nil {
-			//do something
+		var data map[string]any
+		if err := json.Unmarshal(msg, &data); err != nil {
+
+			continue
 		}
-		var rawUserID interface{} = user["userID"]
-		userID := fmt.Sprintf("%v", rawUserID)
-		switch data["message"] {
+
+		authKey, _ := data["authKey"].(string)
+		msgType, _ := data["message"].(string)
+
+		user, err := db.AuthValidation(authKey)
+		if err != nil || user == nil {
+
+			continue
+		}
+
+		userID := fmt.Sprintf("%v", user["userID"])
+		if userID == "<nil>" || userID == "" {
+
+			continue
+		}
+
+		switch msgType {
 		case "register":
 			mu.Lock()
 			clients[userID] = &Client{
@@ -59,37 +74,56 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 				Conn: ws,
 			}
 			mu.Unlock()
+
 		case "sendMessage":
-			messageID, err := SendMessage(data["serverID"], data["channelID"], data["content"], data["authKey"])
-			users, err := GetServerUsers(data["serverID"])
-			queryMap := map[string]string{
-				"userID": userID,
+			serverID := fmt.Sprintf("%v", data["serverID"])
+			channelID := fmt.Sprintf("%v", data["channelID"])
+			content := fmt.Sprintf("%v", data["content"])
+
+			messageID, err := SendMessage(serverID, channelID, content, authKey)
+			if err != nil {
+
 			}
+
+			users, err := GetServerUsers(serverID)
+			if err != nil {
+
+				continue
+			}
+
+			queryMap := map[string]string{"userID": userID}
 			senderData, err := db.QueryRow([]string{"pfp", "username"}, "user", queryMap)
 			if err != nil {
 
 			}
+
+			mu.RLock()
 			for _, value := range users {
 				client, ok := clients[value]
 				if !ok {
-					fmt.Printf("user %s not connected\n", value)
+
 					continue
 				}
-				SendWebsocketMessage(client.Conn, WebsocketMessage{ //this is NOT good practice and needs to be based on what the database got
+
+				SendWebsocketMessage(client.Conn, WebsocketMessage{
 					Type: "recieveMessage",
 					Data: map[string]any{
 						"id":        messageID,
+						"serverID":  serverID,
+						"channelID": channelID,
 						"name":      senderData["username"],
 						"pfp":       senderData["pfp"],
-						"content":   data["content"],
+						"content":   content,
 						"timestamp": time.Now().Unix(),
 					},
 				})
 			}
+			mu.RUnlock()
+
+		default:
 
 		}
 	}
-
 }
 
 func SendWebsocketMessage(ws *websocket.Conn, msg WebsocketMessage) {
