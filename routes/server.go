@@ -95,6 +95,11 @@ func JoinServer(w http.ResponseWriter, r *http.Request) {
 
 	CreateServerUser(data.ServerID, userID)
 	fmt.Fprintf(w, "created server")
+
+	SendWebsocketMessage(clients[userID].Conn, WebsocketMessage{
+		Type: "newServer",
+		Data: map[string]any{},
+	})
 }
 
 func GetServers(w http.ResponseWriter, r *http.Request) {
