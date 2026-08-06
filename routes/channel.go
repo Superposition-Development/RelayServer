@@ -46,7 +46,14 @@ func CreateChannel(w http.ResponseWriter, r *http.Request) {
 
 	}
 	//do some thing abt check the headers for the JWT and then create serverUser
-	fmt.Fprintf(w, "created server")
+	fmt.Fprintf(w, "created channel")
+
+	//eventually this should instead be sent to all users in the server as opposed to just the user who created it
+	//also sned the serverID in the data
+	SendWebsocketMessage(clients[userID].Conn, WebsocketMessage{
+		Type: "newChannel",
+		Data: map[string]any{},
+	})
 }
 
 func GetChannels(w http.ResponseWriter, r *http.Request) {
