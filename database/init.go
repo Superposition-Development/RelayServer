@@ -18,7 +18,7 @@ type Config struct {
 	// UsingCustomDBPath bool
 }
 
-var config Config
+var ServerConfig Config
 
 func InitializeConfig() {
 	err := godotenv.Load()
@@ -26,9 +26,9 @@ func InitializeConfig() {
 		log.Fatal("Couldn't load .env", err)
 	}
 
-	if err := env.Parse(&config); err != nil {
+	if err := env.Parse(&ServerConfig); err != nil {
 		log.Fatalf("Couldn't read .env: %v", err)
 		return
 	}
-	fmt.Println(config)
+	fmt.Println(ServerConfig)
 }

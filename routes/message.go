@@ -64,7 +64,7 @@ func GetChannelMessage(w http.ResponseWriter, r *http.Request) {
 		//FAH
 	}
 
-	messages, err := db.PaginatedQuery([]string{"userID", "content", "id", "timestamp"}, "message", "channelID", data.ChannelID, "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", 15)
+	messages, err := db.PaginatedQuery([]string{"userID", "content", "id", "timestamp"}, "message", "channelID", data.ChannelID, "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", db.ServerConfig.MaxMessagesPerQuery)
 	userContentMap := make(map[string]map[string]any)
 
 	for _, message := range messages {

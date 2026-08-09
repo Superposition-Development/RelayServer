@@ -16,7 +16,7 @@ type TokenClaims struct {
 }
 
 func DecryptJWT(tokenString string) (*jwt.Token, error) {
-	secretKey := []byte(config.SecretKey)
+	secretKey := []byte(ServerConfig.SecretKey)
 
 	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -42,7 +42,7 @@ func EncryptJWT(userID string, expireTimeMin int) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	return token.SignedString([]byte(config.SecretKey))
+	return token.SignedString([]byte(ServerConfig.SecretKey))
 }
 
 func AuthHeaderValidation(r *http.Request) (map[string]any, error) {

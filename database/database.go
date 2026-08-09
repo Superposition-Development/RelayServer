@@ -17,9 +17,9 @@ func InitializeDB() {
 	}
 	sqlScript := string(sqlByte)
 
-	fmt.Println(config.DatabaseName)
+	fmt.Println(ServerConfig.DatabaseName)
 
-	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	db, err := sql.Open("sqlite", ServerConfig.DatabaseName+".db")
 	if err != nil {
 		log.Fatalf("Couldn't open database: %v", err)
 	}
@@ -42,7 +42,7 @@ func InitializeDB() {
 func QueryRow(returnValues []string, tableName string, whereMap map[string]string) (map[string]any, error) {
 	formattedReturnValues := strings.Join(returnValues, ", ")
 
-	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	db, err := sql.Open("sqlite", ServerConfig.DatabaseName+".db")
 	if err != nil {
 		log.Fatalf("Couldn't open database: %v", err)
 	}
@@ -90,7 +90,7 @@ func QueryRow(returnValues []string, tableName string, whereMap map[string]strin
 func Query(returnValues []string, tableName string, columnToQuery string, inputValues []string) ([]map[string]any, error) {
 	formattedReturnValues := strings.Join(returnValues, ", ")
 
-	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	db, err := sql.Open("sqlite", ServerConfig.DatabaseName+".db")
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func Query(returnValues []string, tableName string, columnToQuery string, inputV
 // INSERT INTO {tableName} ({columns}) VALUES ({..?, ?, ?...}});
 func AddRowWithIDReturn(columnMap map[string]any, tableName string) (string, error) {
 
-	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	db, err := sql.Open("sqlite", ServerConfig.DatabaseName+".db")
 	if err != nil {
 		log.Fatalf("Couldn't open database: %v", err)
 	}
@@ -199,7 +199,7 @@ func AddRowWithIDReturn(columnMap map[string]any, tableName string) (string, err
 }
 
 func TheTrucksAreHere() {
-	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	db, err := sql.Open("sqlite", ServerConfig.DatabaseName+".db")
 	if err != nil {
 		log.Fatalf("Couldn't open database: %v", err)
 	}
@@ -237,8 +237,8 @@ func PaginatedQuery(
 		comparisonKeyword = ">"
 	}
 
-	if rowFetchAmount > config.MaxMessagesPerQuery {
-		rowFetchAmount = config.MaxMessagesPerQuery
+	if rowFetchAmount > ServerConfig.MaxMessagesPerQuery {
+		rowFetchAmount = ServerConfig.MaxMessagesPerQuery
 	}
 
 	formattedReturnValues := strings.Join(returnValues, ", ")
@@ -259,7 +259,7 @@ func PaginatedQuery(
 		orderKeyword,
 	)
 
-	db, err := sql.Open("sqlite", config.DatabaseName+".db")
+	db, err := sql.Open("sqlite", ServerConfig.DatabaseName+".db")
 	if err != nil {
 		log.Fatalf("Couldn't open database: %v", err)
 	}
