@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	db "RelayServer/database"
 
@@ -103,6 +104,51 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 				Conn: mutexWS,
 			}
 			mu.Unlock()
+
+		case "sendMessage":
+			serverID := fmt.Sprintf("%v", data["serverID"])
+			channelID := fmt.Sprintf("%v", data["channelID"])
+			content := fmt.Sprintf("%v", data["content"])
+
+			messageID, err := SendMessage(serverID, channelID, content, authKey)
+			if err != nil {
+
+			}
+
+			users, err := GetServerUsers(serverID)
+			if err != nil {
+
+				continue
+			}
+
+			queryMap := map[string]string{"userID": userID}
+			senderData, err := db.QueryRow([]string{"pfp", "username"}, "user", queryMap)
+			if err != nil {
+
+			}
+
+			mu.RLock()
+			for _, value := range users {
+				client, ok := clients[value]
+				if !ok {
+
+					continue
+				}
+
+				SendWebsocketMessage(client.Conn, WebsocketMessage{
+					Type: "recieveMessage",
+					Data: map[string]any{
+						"id":        messageID,
+						"serverID":  serverID,
+						"channelID": channelID,
+						"name":      senderData["username"],
+						"pfp":       senderData["pfp"],
+						"content":   content,
+						"timestamp": time.Now().Unix(),
+					},
+				})
+			}
+			mu.RUnlock()
 
 		case "joinCall":
 			go func(d map[string]any) {
