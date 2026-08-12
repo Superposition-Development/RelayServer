@@ -10,6 +10,7 @@ import (
 type CreateChannelRequest struct {
 	Name     string `json:"name"`
 	ServerID string `json:"serverID"`
+	Type     string `json:"type"`
 }
 
 type GetChannelsRequest struct {
@@ -36,9 +37,16 @@ func CreateChannel(w http.ResponseWriter, r *http.Request) {
 		//FAH
 	}
 
+	fmt.Println(data)
+
+	if data.Type != "text" && data.Type != "voice" {
+		return
+	}
+
 	createdChannel := map[string]any{
 		"name":     data.Name,
 		"serverID": data.ServerID,
+		"type":     data.Type,
 	}
 
 	_, e := db.AddRowWithIDReturn(createdChannel, "channel")
@@ -75,7 +83,7 @@ func GetChannels(w http.ResponseWriter, r *http.Request) {
 		//FAH
 	}
 
-	channels, err := db.Query([]string{"name", "id"}, "channel", "serverID", []string{data.ServerID})
+	channels, err := db.Query([]string{"name", "id", "type"}, "channel", "serverID", []string{data.ServerID})
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

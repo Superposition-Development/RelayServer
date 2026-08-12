@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS message (
 CREATE TABLE IF NOT EXISTS channel (
         id INTEGER PRIMARY KEY,
         name TEXT,
+        type TEXT NOT NULL,
         serverID INTEGER,
         FOREIGN KEY (serverID) REFERENCES server(id)
     );
