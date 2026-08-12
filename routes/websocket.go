@@ -1,14 +1,13 @@
 package routes
 
 import (
+	db "RelayServer/database"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"sync"
 	"time"
-
-	db "RelayServer/database"
 
 	"github.com/gorilla/websocket"
 	"github.com/pion/webrtc/v3"
@@ -62,6 +61,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			mu.Lock()
 			delete(clients, registeredUserID)
 			mu.Unlock()
+			log.Printf("Client disconnected: %s", registeredUserID)
 		}
 	}()
 
@@ -73,25 +73,21 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 
 		var data map[string]any
 		if err := json.Unmarshal(msg, &data); err != nil {
+			log.Printf("Failed to unmarshal JSON: %v", err)
 			continue
 		}
 
-		authKey := fmt.Sprintf("%v", data["authKey"])
+		authKey, _ := data["authKey"].(string)
+		msgType, _ := data["message"].(string)
 
 		user, err := db.AuthValidation(authKey)
 		if err != nil || user == nil {
-
+			log.Printf("Auth validation failed for token: %s", authKey)
 			continue
 		}
 
 		userID := fmt.Sprintf("%v", user["userID"])
 		if userID == "<nil>" || userID == "" {
-			continue
-		}
-
-		msgType, _ := data["message"].(string)
-		userID, ok := data["userID"].(string)
-		if !ok || userID == "" {
 			continue
 		}
 
@@ -104,6 +100,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 				Conn: mutexWS,
 			}
 			mu.Unlock()
+			log.Printf("Registered websocket user: %s", userID)
 
 		case "sendMessage":
 			serverID := fmt.Sprintf("%v", data["serverID"])
@@ -112,61 +109,58 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 
 			messageID, err := SendMessage(serverID, channelID, content, authKey)
 			if err != nil {
-
+				log.Printf("Error sending message: %v", err)
 			}
 
 			users, err := GetServerUsers(serverID)
 			if err != nil {
-
 				continue
 			}
 
 			queryMap := map[string]string{"userID": userID}
 			senderData, err := db.QueryRow([]string{"pfp", "username"}, "user", queryMap)
 			if err != nil {
+				log.Printf("Error fetching sender details: %v", err)
+			}
 
+			outboundMsg := WebsocketMessage{
+				Type: "recieveMessage",
+				Data: map[string]any{
+					"id":        messageID,
+					"serverID":  serverID,
+					"channelID": channelID,
+					"name":      senderData["username"],
+					"pfp":       senderData["pfp"],
+					"content":   content,
+					"timestamp": time.Now().Unix(),
+				},
 			}
 
 			mu.RLock()
-			for _, value := range users {
-				client, ok := clients[value]
+			for _, targetID := range users {
+				client, ok := clients[targetID]
 				if !ok {
-
 					continue
 				}
-
-				SendWebsocketMessage(client.Conn, WebsocketMessage{
-					Type: "recieveMessage",
-					Data: map[string]any{
-						"id":        messageID,
-						"serverID":  serverID,
-						"channelID": channelID,
-						"name":      senderData["username"],
-						"pfp":       senderData["pfp"],
-						"content":   content,
-						"timestamp": time.Now().Unix(),
-					},
-				})
+				SendWebsocketMessage(client.Conn, outboundMsg)
 			}
 			mu.RUnlock()
 
 		case "joinCall":
-			go func(d map[string]any) {
+			go func(d map[string]any, uid string) {
 				callID := fmt.Sprintf("%v", d["callID"])
-
-				globalCoordinator.AddUserToCall(userID, callID, mutexWS.ws)
-			}(data)
+				globalCoordinator.AddUserToCall(uid, callID, mutexWS.ws)
+			}(data, userID)
 
 		case "leaveCall":
-			go func(d map[string]any) {
+			go func(d map[string]any, uid string) {
 				callID := fmt.Sprintf("%v", d["callID"])
-				globalCoordinator.RemoveUserFromCall(userID, callID)
-			}(data)
+				globalCoordinator.RemoveUserFromCall(uid, callID)
+			}(data, userID)
 
 		case "offer":
-			go func(d map[string]any) {
+			go func(d map[string]any, uid string) {
 				callID := fmt.Sprintf("%v", d["callID"])
-
 				offerMap, ok := d["offer"].(map[string]any)
 				if !ok {
 					return
@@ -178,20 +172,19 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 				globalCoordinator.mutex.RUnlock()
 
 				if ok {
-					if peer, ok := call.GetPeer(userID); ok {
+					if peer, ok := call.GetPeer(uid); ok {
 						answer, err := peer.ReactOnOffer(sdpStr)
 						if err != nil {
 							return
 						}
-						call.SendAnswer(answer, userID)
+						call.SendAnswer(answer, uid)
 					}
 				}
-			}(data)
+			}(data, userID)
 
 		case "answer":
-			go func(d map[string]any) {
+			go func(d map[string]any, uid string) {
 				callID := fmt.Sprintf("%v", d["callID"])
-
 				answerMap, ok := d["answer"].(map[string]any)
 				if !ok {
 					return
@@ -203,18 +196,17 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 				globalCoordinator.mutex.RUnlock()
 
 				if ok {
-					if peer, ok := call.GetPeer(userID); ok {
+					if peer, ok := call.GetPeer(uid); ok {
 						if err := peer.ReactOnAnswer(sdpStr); err != nil {
 							log.Printf("ReactOnAnswer Error: %v", err)
 						}
 					}
 				}
-			}(data)
+			}(data, userID)
 
 		case "candidate", "ice-candidate":
-			go func(d map[string]any) {
+			go func(d map[string]any, uid string) {
 				callID := fmt.Sprintf("%v", d["callID"])
-
 				candMap, ok := d["candidate"].(map[string]any)
 				if !ok {
 					return
@@ -243,13 +235,16 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 				globalCoordinator.mutex.RUnlock()
 
 				if ok {
-					if peer, ok := call.GetPeer(userID); ok {
+					if peer, ok := call.GetPeer(uid); ok {
 						if err := peer.connection.AddICECandidate(init); err != nil {
-
+							log.Printf("AddICECandidate Error: %v", err)
 						}
 					}
 				}
-			}(data)
+			}(data, userID)
+
+		default:
+			log.Printf("Unhandled message type: %s", msgType)
 		}
 	}
 }
