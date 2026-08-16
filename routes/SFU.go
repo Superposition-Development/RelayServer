@@ -395,6 +395,14 @@ func (coordinator *Coordinator) AddUserToCall(userID string, callID string, sock
 		}
 	}
 
+	conn.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
+		log.Printf(
+			"[PeerConnection %s] ICE connection state: %s",
+			userID,
+			state.String(),
+		)
+	})
+
 	conn.OnConnectionStateChange(func(state webrtc.PeerConnectionState) {
 		log.Printf("[PeerConnection %s] Connection state changed: %s", userID, state.String())
 		switch state {
