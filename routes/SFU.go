@@ -356,7 +356,27 @@ func (coordinator *Coordinator) AddUserToCall(userID string, callID string, sock
 	peer.SetSocket(socket)
 
 	log.Printf("[Coordinator] Creating WebRTC PeerConnection for user %s", userID)
-	conn, err := webrtc.NewPeerConnection(webrtc.Configuration{})
+	config := webrtc.Configuration{
+		ICEServers: []webrtc.ICEServer{
+			{
+				URLs: []string{
+					// "stun:stun.l.google.com:19302",
+				},
+			},
+			{
+				URLs: []string{
+					"turn:global.relay.metered.ca:80",
+					"turn:global.relay.metered.ca:443",
+					"turn:global.relay.metered.ca:443?transport=tcp",
+				},
+				Username:   "a072cb146b471d7876e641dc",
+				Credential: "AbV/kjuHbgOurcxl",
+			},
+		},
+	}
+
+	conn, err := webrtc.NewPeerConnection(config)
+	// conn, err := webrtc.NewPeerConnection(webrtc.Configuration{})
 	if err != nil {
 		log.Printf("[Coordinator] Failed to create PeerConnection for user %s: %v", userID, err)
 		return
