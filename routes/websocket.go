@@ -14,7 +14,9 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 var globalCoordinator = NewCoordinator()
@@ -24,10 +26,15 @@ type MutexConn struct {
 	mu sync.Mutex
 }
 
-func (s *MutexConn) WriteJSON(v interface{}) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.ws.WriteJSON(v)
+func (m *MutexConn) WriteJSON(v interface{}) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.ws == nil {
+		return fmt.Errorf("nil websocket")
+	}
+
+	return m.ws.WriteJSON(v)
 }
 
 type Client struct {
@@ -45,35 +52,68 @@ var (
 	mu      sync.RWMutex
 )
 
+func parseString(val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	if str, ok := val.(string); ok {
+		return str
+	}
+	return fmt.Sprintf("%v", val)
+}
+
 func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	rawWS, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("Upgrade error: %v", err)
+		log.Printf("[WS] Upgrade error: %v", err)
 		return
 	}
 
 	mutexWS := &MutexConn{ws: rawWS}
-	var registeredUserID string
+
+	var (
+		registeredUserID string
+		userMu           sync.Mutex
+	)
 
 	defer func() {
-		rawWS.Close()
-		if registeredUserID != "" {
+		_ = rawWS.Close()
+
+		userMu.Lock()
+		uid := registeredUserID
+		userMu.Unlock()
+
+		if uid != "" {
 			mu.Lock()
-			delete(clients, registeredUserID)
+			delete(clients, uid)
 			mu.Unlock()
-			log.Printf("Client disconnected: %s", registeredUserID)
+
+			log.Printf("[WS] Client disconnected: %s", uid)
 		}
 	}()
+
+	log.Printf("[WS] New WebSocket connection from %s", r.RemoteAddr)
 
 	for {
 		_, msg, err := rawWS.ReadMessage()
 		if err != nil {
+			userMu.Lock()
+			uid := registeredUserID
+			userMu.Unlock()
+
+			log.Printf("[WS %s] Read error: %v", uid, err)
 			break
 		}
 
+		userMu.Lock()
+		currentUID := registeredUserID
+		userMu.Unlock()
+
+		log.Printf("[WS %s] Recieved: %s", currentUID, string(msg))
+
 		var data map[string]any
 		if err := json.Unmarshal(msg, &data); err != nil {
-			log.Printf("Failed to unmarshal JSON: %v", err)
+			log.Printf("[WS] Failed to unmarshal JSON: %v", err)
 			continue
 		}
 
@@ -82,173 +122,238 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 
 		user, err := db.AuthValidation(authKey)
 		if err != nil || user == nil {
-			log.Printf("Auth validation failed for token: %s", authKey)
+			log.Printf("[WS] Auth failed")
 			continue
 		}
 
-		userID := fmt.Sprintf("%v", user["userID"])
-		if userID == "<nil>" || userID == "" {
+		userID := parseString(user["userID"])
+		if userID == "" || userID == "<nil>" {
+			log.Printf("[WS] Invalid userID")
 			continue
 		}
 
 		switch msgType {
 		case "register":
+			userMu.Lock()
 			registeredUserID = userID
+			userMu.Unlock()
+
 			mu.Lock()
 			clients[userID] = &Client{
 				ID:   userID,
 				Conn: mutexWS,
 			}
 			mu.Unlock()
-			log.Printf("Registered websocket user: %s", userID)
+
+			log.Printf("[WS] Registered websocket user: %s", userID)
 
 		case "sendMessage":
-			serverID := fmt.Sprintf("%v", data["serverID"])
-			channelID := fmt.Sprintf("%v", data["channelID"])
-			content := fmt.Sprintf("%v", data["content"])
-
-			messageID, err := SendMessage(serverID, channelID, content, authKey)
-			if err != nil {
-				log.Printf("Error sending message: %v", err)
-			}
-
-			users, err := GetServerUsers(serverID)
-			if err != nil {
-				continue
-			}
-
-			queryMap := map[string]string{"userID": userID}
-			senderData, err := db.QueryRow([]string{"pfp", "username"}, "user", queryMap)
-			if err != nil {
-				log.Printf("Error fetching sender details: %v", err)
-			}
-
-			outboundMsg := WebsocketMessage{
-				Type: "recieveMessage",
-				Data: map[string]any{
-					"id":        messageID,
-					"serverID":  serverID,
-					"channelID": channelID,
-					"name":      senderData["username"],
-					"pfp":       senderData["pfp"],
-					"content":   content,
-					"timestamp": time.Now().Unix(),
-				},
-			}
-
-			mu.RLock()
-			for _, targetID := range users {
-				client, ok := clients[targetID]
-				if !ok {
-					continue
-				}
-				SendWebsocketMessage(client.Conn, outboundMsg)
-			}
-			mu.RUnlock()
+			handleSendMessage(data, userID, authKey)
 
 		case "joinCall":
-			go func(d map[string]any, uid string) {
-				callID := fmt.Sprintf("%v", d["callID"])
-				globalCoordinator.AddUserToCall(uid, callID, mutexWS.ws)
-			}(data, userID)
+			callID := parseString(data["callID"])
+			log.Printf("[WS %s] Joining call %s", userID, callID)
+
+			go globalCoordinator.AddUserToCall(userID, callID, rawWS)
 
 		case "leaveCall":
-			go func(d map[string]any, uid string) {
-				callID := fmt.Sprintf("%v", d["callID"])
-				globalCoordinator.RemoveUserFromCall(uid, callID)
-			}(data, userID)
+			callID := parseString(data["callID"])
+			log.Printf("[WS %s] Leaving call %s", userID, callID)
+
+			go globalCoordinator.RemoveUserFromCall(userID, callID)
 
 		case "offer":
-			go func(d map[string]any, uid string) {
-				callID := fmt.Sprintf("%v", d["callID"])
-				offerMap, ok := d["offer"].(map[string]any)
-				if !ok {
-					return
-				}
-				sdpStr, _ := offerMap["sdp"].(string)
-
-				globalCoordinator.mutex.RLock()
-				call, ok := globalCoordinator.Sessions[callID]
-				globalCoordinator.mutex.RUnlock()
-
-				if ok {
-					if peer, ok := call.GetPeer(uid); ok {
-						answer, err := peer.ReactOnOffer(sdpStr)
-						if err != nil {
-							return
-						}
-						call.SendAnswer(answer, uid)
-					}
-				}
-			}(data, userID)
+			handleOffer(data, userID)
 
 		case "answer":
-			go func(d map[string]any, uid string) {
-				callID := fmt.Sprintf("%v", d["callID"])
-				answerMap, ok := d["answer"].(map[string]any)
-				if !ok {
-					return
-				}
-				sdpStr, _ := answerMap["sdp"].(string)
-
-				globalCoordinator.mutex.RLock()
-				call, ok := globalCoordinator.Sessions[callID]
-				globalCoordinator.mutex.RUnlock()
-
-				if ok {
-					if peer, ok := call.GetPeer(uid); ok {
-						if err := peer.ReactOnAnswer(sdpStr); err != nil {
-							log.Printf("ReactOnAnswer Error: %v", err)
-						}
-					}
-				}
-			}(data, userID)
+			handleAnswer(data, userID)
 
 		case "candidate", "ice-candidate":
-			go func(d map[string]any, uid string) {
-				callID := fmt.Sprintf("%v", d["callID"])
-				candMap, ok := d["candidate"].(map[string]any)
-				if !ok {
-					return
-				}
-
-				candStr, _ := candMap["candidate"].(string)
-				var sdpMid *string
-				if v, ok := candMap["sdpMid"].(string); ok {
-					sdpMid = &v
-				}
-
-				var sdpMLineIndex *uint16
-				if v, ok := candMap["sdpMLineIndex"].(float64); ok {
-					idx := uint16(v)
-					sdpMLineIndex = &idx
-				}
-
-				init := webrtc.ICECandidateInit{
-					Candidate:     candStr,
-					SDPMid:        sdpMid,
-					SDPMLineIndex: sdpMLineIndex,
-				}
-
-				globalCoordinator.mutex.RLock()
-				call, ok := globalCoordinator.Sessions[callID]
-				globalCoordinator.mutex.RUnlock()
-
-				if ok {
-					if peer, ok := call.GetPeer(uid); ok {
-						if err := peer.connection.AddICECandidate(init); err != nil {
-							log.Printf("AddICECandidate Error: %v", err)
-						}
-					}
-				}
-			}(data, userID)
+			handleCandidate(data, userID)
 
 		default:
-			log.Printf("Unhandled message type: %s", msgType)
+			log.Printf("[WS %s] Unknown Message Type: %s", userID, msgType)
+		}
+	}
+}
+
+func handleOffer(data map[string]any, userID string) {
+	callID := parseString(data["callID"])
+
+	offerMap, ok := data["offer"].(map[string]any)
+	if !ok {
+		log.Printf("[WS %s] Invalid offer payload", userID)
+		return
+	}
+
+	sdpStr, _ := offerMap["sdp"].(string)
+	if sdpStr == "" {
+		log.Printf("[WS %s] Empty offer SDP", userID)
+		return
+	}
+
+	globalCoordinator.mutex.RLock()
+	call, ok := globalCoordinator.Sessions[callID]
+	globalCoordinator.mutex.RUnlock()
+
+	if !ok {
+		log.Printf("[WS %s] Call %s not found", userID, callID)
+		return
+	}
+
+	peer, ok := call.GetPeer(userID)
+	if !ok {
+		log.Printf("[WS %s] Peer not in call %s", userID, callID)
+		return
+	}
+
+	answer, err := peer.ReactOnOffer(sdpStr)
+	if err != nil {
+		log.Printf("[WS %s] ReactOnOffer failed: %v", userID, err)
+		return
+	}
+
+	call.SendAnswer(answer, userID)
+}
+
+func handleAnswer(data map[string]any, userID string) {
+	callID := parseString(data["callID"])
+
+	answerMap, ok := data["answer"].(map[string]any)
+	if !ok {
+		log.Printf("[WS %s] Invalid answer payload", userID)
+		return
+	}
+
+	sdpStr, _ := answerMap["sdp"].(string)
+	if sdpStr == "" {
+		log.Printf("[WS %s] Empty answer SDP", userID)
+		return
+	}
+
+	globalCoordinator.mutex.RLock()
+	call, ok := globalCoordinator.Sessions[callID]
+	globalCoordinator.mutex.RUnlock()
+
+	if !ok {
+		log.Printf("[WS %s] Call %s not found", userID, callID)
+		return
+	}
+
+	peer, ok := call.GetPeer(userID)
+	if !ok {
+		log.Printf("[WS %s] Peer not found", userID)
+		return
+	}
+
+	if err := peer.ReactOnAnswer(sdpStr); err != nil {
+		log.Printf("[WS %s] ReactOnAnswer failed: %v", userID, err)
+		return
+	}
+
+	log.Printf("[WS %s] Answer success", userID)
+}
+
+func handleCandidate(data map[string]any, userID string) {
+	callID := parseString(data["callID"])
+
+	candidateMap, ok := data["candidate"].(map[string]any)
+	if !ok {
+		log.Printf("[WS %s] Invalid candidate payload: %T", userID, data["candidate"])
+		return
+	}
+
+	candidateJSON, err := json.Marshal(candidateMap)
+	if err != nil {
+		log.Printf("[WS %s] Failed to marshal candidate: %v", userID, err)
+		return
+	}
+
+	var init webrtc.ICECandidateInit
+	if err := json.Unmarshal(candidateJSON, &init); err != nil {
+		log.Printf("[WS %s] Failed to decode candidate: %v", userID, err)
+		return
+	}
+
+	log.Printf("[WS %s] Received ICE candidate: %s", userID, init.Candidate)
+
+	globalCoordinator.mutex.RLock()
+	call, ok := globalCoordinator.Sessions[callID]
+	globalCoordinator.mutex.RUnlock()
+
+	if !ok {
+		log.Printf("[WS %s] Call %s not found", userID, callID)
+		return
+	}
+
+	peer, ok := call.GetPeer(userID)
+	if !ok {
+		log.Printf("[WS %s] Peer not found", userID)
+		return
+	}
+
+	if err := peer.AddRemoteCandidate(init); err != nil {
+		log.Printf("[WS %s] AddRemoteCandidate failed: %v", userID, err)
+		return
+	}
+
+	log.Printf("[WS %s] ICE candidate success", userID)
+}
+
+func handleSendMessage(data map[string]any, userID, authKey string) {
+	serverID := parseString(data["serverID"])
+	channelID := parseString(data["channelID"])
+	content := parseString(data["content"])
+
+	messageID, err := SendMessage(serverID, channelID, content, authKey)
+	if err != nil {
+		log.Printf("Error sending message: %v", err)
+		return
+	}
+
+	users, err := GetServerUsers(serverID)
+	if err != nil {
+		return
+	}
+
+	senderData, err := db.QueryRow(
+		[]string{"pfp", "username"},
+		"user",
+		map[string]string{"userID": userID},
+	)
+	if err != nil {
+		log.Printf("Error fetching sender details: %v", err)
+	}
+
+	outboundMsg := WebsocketMessage{
+		Type: "recieveMessage",
+		Data: map[string]any{
+			"id":        messageID,
+			"serverID":  serverID,
+			"channelID": channelID,
+			"name":      senderData["username"],
+			"pfp":       senderData["pfp"],
+			"content":   content,
+			"timestamp": time.Now().Unix(),
+		},
+	}
+
+	mu.RLock()
+	defer mu.RUnlock()
+
+	for _, targetID := range users {
+		client, ok := clients[targetID]
+		if !ok {
+			continue
+		}
+
+		if err := SendWebsocketMessage(client.Conn, outboundMsg); err != nil {
+			log.Printf("Failed to send message to  %s: %v", targetID, err)
 		}
 	}
 }
 
 func SendWebsocketMessage(mutexWS *MutexConn, msg WebsocketMessage) error {
+	log.Printf("[WS] Sending Message: type=%s data=%+v", msg.Type, msg.Data)
 	return mutexWS.WriteJSON(msg)
 }
