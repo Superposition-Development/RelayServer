@@ -31,7 +31,7 @@ func GetTURNCredentials(w http.ResponseWriter, r *http.Request) {
 	//w.encode the stuff, refer to getservers
 }
 
-func main() { //nolint:gocyclo,cyclop
+func RunTURNServer() { //nolint:gocyclo,cyclop
 	publicIP := "127.0.0.1" //this might need to be ipv6
 	port := 3748
 	TURNKnownKey := turn.GenerateAuthKey(TURNUsername, db.ServerConfig.Realm, TURNPassword)
