@@ -14,6 +14,7 @@ type Config struct {
 	SecretKey           string `env:"SECRET_KEY"`
 	SignupPassword      string `env:"SIGNUP_PASSWORD"`
 	MaxMessagesPerQuery int    `env:"MAX_MESSAGES_PER_QUERY"`
+	Realm               string `env:"REALM"`
 	// SignupPasswordRequired bool
 	// UsingCustomDBPath bool
 }
