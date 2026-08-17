@@ -453,7 +453,7 @@ func (coordinator *Coordinator) AddUserToCall(userID, callID string, socket *web
 	_, err = conn.AddTransceiverFromKind(
 		webrtc.RTPCodecTypeAudio,
 		webrtc.RTPTransceiverInit{
-			Direction: webrtc.RTPTransceiverDirectionRecvonly,
+			Direction: webrtc.RTPTransceiverDirectionSendrecv,
 		},
 	)
 	if err != nil {
