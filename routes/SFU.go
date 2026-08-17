@@ -487,6 +487,13 @@ func (coordinator *Coordinator) AddUserToCall(userID, callID string, socket *web
 		if trackLocal == nil {
 			return
 		}
+
+		log.Printf("[Call %s] New track %s; renegotiating", call.id, trackLocal.ID())
+
+		go func() {
+			call.Signal()
+		}()
+
 		defer call.RemoveTrack(trackLocal)
 
 		buf := make([]byte, 1500)
