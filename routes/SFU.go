@@ -54,7 +54,12 @@ type Call struct {
 	mutex sync.RWMutex
 
 	peers  map[string]*Peer
-	tracks map[string]*webrtc.TrackLocalStaticRTP
+	tracks map[string]*LocalTrack
+}
+
+type LocalTrack struct {
+	Track *webrtc.TrackLocalStaticRTP
+	Owner string
 }
 
 func newPeer(id string) *Peer {
@@ -219,7 +224,7 @@ func NewCall(id string) *Call {
 	return &Call{
 		id:     id,
 		peers:  make(map[string]*Peer),
-		tracks: make(map[string]*webrtc.TrackLocalStaticRTP),
+		tracks: make(map[string]*LocalTrack),
 	}
 }
 
@@ -279,7 +284,7 @@ func (call *Call) SendAnswer(message webrtc.SessionDescription, peerID string) {
 	log.Printf("[Call %s] Answer sent to peer %s", call.id, peerID)
 }
 
-func (call *Call) AddTrack(track *webrtc.TrackRemote) *webrtc.TrackLocalStaticRTP {
+func (call *Call) AddTrack(track *webrtc.TrackRemote, owner string) *webrtc.TrackLocalStaticRTP {
 	log.Printf("[Call %s] Adding remote track ID=%s StreamID=%s Kind=%s", call.id, track.ID(), track.StreamID(), track.Kind().String())
 
 	trackLocal, err := webrtc.NewTrackLocalStaticRTP(
@@ -293,7 +298,10 @@ func (call *Call) AddTrack(track *webrtc.TrackRemote) *webrtc.TrackLocalStaticRT
 	}
 
 	call.mutex.Lock()
-	call.tracks[track.ID()] = trackLocal
+	call.tracks[track.ID()] = &LocalTrack{
+		Track: trackLocal,
+		Owner: owner,
+	}
 	total := len(call.tracks)
 	call.mutex.Unlock()
 
@@ -340,7 +348,7 @@ func (call *Call) Signal() {
 		peers = append(peers, peer)
 	}
 
-	tracks := make([]*webrtc.TrackLocalStaticRTP, 0, len(call.tracks))
+	tracks := make([]*LocalTrack, 0, len(call.tracks))
 	for _, track := range call.tracks {
 		tracks = append(tracks, track)
 	}
@@ -361,7 +369,16 @@ func (call *Call) Signal() {
 			}
 		}
 
-		for _, track := range tracks {
+		for _, localTrack := range tracks {
+			if localTrack == nil || localTrack.Track == nil {
+				continue
+			}
+			if localTrack.Owner == peer.id {
+				continue
+			}
+
+			track := localTrack.Track
+
 			if existingTracks[track.ID()] {
 				continue
 			}
@@ -483,7 +500,7 @@ func (coordinator *Coordinator) AddUserToCall(userID, callID string, socket *web
 	conn.OnTrack(func(trackRemote *webrtc.TrackRemote, receiver *webrtc.RTPReceiver) {
 		log.Printf("[PeerConnection %s] remote track: ID=%s Kind=%s StreamID=%s", userID, trackRemote.ID(), trackRemote.Kind().String(), trackRemote.StreamID())
 
-		trackLocal := call.AddTrack(trackRemote)
+		trackLocal := call.AddTrack(trackRemote, userID)
 		if trackLocal == nil {
 			return
 		}
