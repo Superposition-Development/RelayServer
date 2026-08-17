@@ -13,7 +13,7 @@ import (
 var config = webrtc.Configuration{
 	ICEServers: []webrtc.ICEServer{
 		{
-			URLs: []string{"stun:stun.l.google.com:19302"},
+			// URLs: []string{"stun:stun.l.google.com:19302"},
 		},
 		{
 			URLs: []string{
@@ -25,6 +25,7 @@ var config = webrtc.Configuration{
 			Credential: "AbV/kjuHbgOurcxl",
 		},
 	},
+	ICETransportPolicy: webrtc.ICETransportPolicyRelay,
 }
 
 type Coordinator struct {
@@ -454,6 +455,13 @@ func (coordinator *Coordinator) AddUserToCall(userID, callID string, socket *web
 			log.Printf("[PeerConnection %s] ICE gathering finished", userID)
 			return
 		}
+
+		log.Printf(
+			"[PeerConnection %s] local ice: %s",
+			userID,
+			ice.ToJSON().Candidate,
+		)
+
 		call.SendICE(ice, userID)
 	})
 
