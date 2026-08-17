@@ -13,9 +13,6 @@ import (
 var config = webrtc.Configuration{
 	ICEServers: []webrtc.ICEServer{
 		{
-			// URLs: []string{"stun:stun.l.google.com:19302"},
-		},
-		{
 			URLs: []string{
 				"turn:global.relay.metered.ca:80",
 				"turn:global.relay.metered.ca:443",
@@ -32,6 +29,14 @@ type Coordinator struct {
 	mutex    sync.RWMutex
 	Sessions map[string]*Call
 }
+
+func NewCoordinator() *Coordinator {
+	log.Println("[Coordinator] Init Coordinator")
+	return &Coordinator{
+		Sessions: make(map[string]*Call),
+	}
+}
+
 type Peer struct {
 	id string
 
@@ -45,8 +50,9 @@ type Peer struct {
 }
 
 type Call struct {
-	id     string
-	mutex  sync.RWMutex
+	id    string
+	mutex sync.RWMutex
+
 	peers  map[string]*Peer
 	tracks map[string]*webrtc.TrackLocalStaticRTP
 }
@@ -71,7 +77,7 @@ func (p *Peer) WriteJSON(v interface{}) error {
 
 	log.Printf("[Peer %s] Sending WebSocket message: %+v", p.id, v)
 	if err := p.socket.WriteJSON(v); err != nil {
-		log.Printf("[Peer %s] Error writing JSON to WebSocket: %v", p.id, err)
+		log.Printf("[Peer %s] Error writing JSON: %v", p.id, err)
 		return err
 	}
 
@@ -117,12 +123,12 @@ func (p *Peer) ReactOnOffer(offerStr string) (webrtc.SessionDescription, error) 
 	}
 
 	if err := p.connection.SetRemoteDescription(offer); err != nil {
-		log.Printf("[Peer %s] Error setting Remote Description (Offer): %v", p.id, err)
+		log.Printf("[Peer %s] Error setting Remote Description: %v", p.id, err)
 		return webrtc.SessionDescription{}, err
 	}
 
 	p.remoteDescriptionSet = true
-	p.ClearPendingICECandidatesLocked()
+	p.clearPendingICECandidatesLocked()
 
 	answer, err := p.connection.CreateAnswer(nil)
 	if err != nil {
@@ -131,7 +137,7 @@ func (p *Peer) ReactOnOffer(offerStr string) (webrtc.SessionDescription, error) 
 	}
 
 	if err := p.connection.SetLocalDescription(answer); err != nil {
-		log.Printf("[Peer %s] Error setting Local Description (Answer): %v", p.id, err)
+		log.Printf("[Peer %s] Error setting Local Description: %v", p.id, err)
 		return webrtc.SessionDescription{}, err
 	}
 
@@ -155,12 +161,12 @@ func (p *Peer) ReactOnAnswer(answerStr string) error {
 	}
 
 	if err := p.connection.SetRemoteDescription(answer); err != nil {
-		log.Printf("[Peer %s] Error setting Remote Description (Answer): %v", p.id, err)
+		log.Printf("[Peer %s] Error setting Remote Description: %v", p.id, err)
 		return err
 	}
 
 	p.remoteDescriptionSet = true
-	p.ClearPendingICECandidatesLocked()
+	p.clearPendingICECandidatesLocked()
 
 	log.Printf("[Peer %s] Set Remote Description (Answer)", p.id)
 	return nil
@@ -175,26 +181,36 @@ func (p *Peer) AddRemoteCandidate(candidate webrtc.ICECandidateInit) error {
 	}
 
 	if !p.remoteDescriptionSet {
-		log.Printf("[Peer %s] ICE queued, remote desc unset", p.id)
+		log.Printf("[Peer %s] ICE queued; remote desc unset: %s", p.id, candidate.Candidate)
 		p.pendingCandidates = append(p.pendingCandidates, candidate)
 		return nil
 	}
 
-	log.Printf("[Peer %s] Adding remote ICE candidate", p.id)
-	return p.connection.AddICECandidate(candidate)
+	log.Printf("[Peer %s] Adding remote ICE candidate: %s", p.id, candidate.Candidate)
+	if err := p.connection.AddICECandidate(candidate); err != nil {
+		log.Printf("[Peer %s] AddICECandidate failed: %v", p.id, err)
+		return err
+	}
+
+	log.Printf("[Peer %s] ICE candidate added", p.id)
+	return nil
 }
 
-func (p *Peer) ClearPendingICECandidatesLocked() {
+func (p *Peer) clearPendingICECandidatesLocked() {
 	if len(p.pendingCandidates) == 0 {
 		return
 	}
 
 	log.Printf("[Peer %s] Clearing %d queued ICE candidates", p.id, len(p.pendingCandidates))
+
 	for _, candidate := range p.pendingCandidates {
 		if err := p.connection.AddICECandidate(candidate); err != nil {
 			log.Printf("[Peer %s] Error adding queued ICE candidate: %v", p.id, err)
+		} else {
+			log.Printf("[Peer %s] queued ICE added : %s", p.id, candidate.Candidate)
 		}
 	}
+
 	p.pendingCandidates = nil
 }
 
@@ -226,18 +242,24 @@ func (call *Call) AddPeer(peer *Peer) {
 
 func (call *Call) RemovePeer(peerID string) {
 	call.mutex.Lock()
+	peer, exists := call.peers[peerID]
 	delete(call.peers, peerID)
 	remaining := len(call.peers)
 	call.mutex.Unlock()
 
+	if exists && peer != nil {
+		if conn := peer.GetPeerConnection(); conn != nil {
+			_ = conn.Close()
+		}
+	}
+
 	log.Printf("[Call %s] Removed peer: %s. Total peers: %d", call.id, peerID, remaining)
-	call.Signal()
 }
 
 func (call *Call) SendAnswer(message webrtc.SessionDescription, peerID string) {
 	peer, ok := call.GetPeer(peerID)
 	if !ok {
-		log.Printf("[Call %s] Failed to send Answer: Peer %s not found", call.id, peerID)
+		log.Printf("[Call %s] Failed to send Answer: peer %s not found", call.id, peerID)
 		return
 	}
 
@@ -250,7 +272,7 @@ func (call *Call) SendAnswer(message webrtc.SessionDescription, peerID string) {
 	}
 
 	if err := peer.WriteJSON(msg); err != nil {
-		log.Printf("[Call %s] Error sending Answer to peer %s: %v", call.id, peerID, err)
+		log.Printf("[Call %s] Error sending Answer: %v", call.id, err)
 		return
 	}
 
@@ -258,15 +280,13 @@ func (call *Call) SendAnswer(message webrtc.SessionDescription, peerID string) {
 }
 
 func (call *Call) AddTrack(track *webrtc.TrackRemote) *webrtc.TrackLocalStaticRTP {
-	log.Printf("[Call %s] Adding remote track ID: %s, StreamID: %s, Kind: %s",
-		call.id, track.ID(), track.StreamID(), track.Kind().String())
+	log.Printf("[Call %s] Adding remote track ID=%s StreamID=%s Kind=%s", call.id, track.ID(), track.StreamID(), track.Kind().String())
 
 	trackLocal, err := webrtc.NewTrackLocalStaticRTP(
 		track.Codec().RTPCodecCapability,
 		track.ID(),
 		track.StreamID(),
 	)
-
 	if err != nil {
 		log.Printf("[Call %s] Error creating local track: %v", call.id, err)
 		return nil
@@ -278,8 +298,6 @@ func (call *Call) AddTrack(track *webrtc.TrackRemote) *webrtc.TrackLocalStaticRT
 	call.mutex.Unlock()
 
 	log.Printf("[Call %s] Local track added. Total active tracks: %d", call.id, total)
-	call.Signal()
-
 	return trackLocal
 }
 
@@ -294,24 +312,24 @@ func (call *Call) RemoveTrack(track *webrtc.TrackLocalStaticRTP) {
 	call.mutex.Unlock()
 
 	log.Printf("[Call %s] Track %s removed. Total tracks: %d", call.id, track.ID(), remaining)
-	call.Signal()
 }
 
 func (call *Call) SendICE(message *webrtc.ICECandidate, peerID string) {
 	peer, ok := call.GetPeer(peerID)
 	if !ok {
-		log.Printf("[Call %s] SendICE failed: Peer %s not found", call.id, peerID)
+		log.Printf("[Call %s] SendICE failed: peer %s not found", call.id, peerID)
 		return
 	}
 
 	candidate := message.ToJSON()
+	log.Printf("[Call %s] Sending ICE to %s: %s", call.id, peerID, candidate.Candidate)
+
 	err := peer.WriteJSON(WebsocketMessage{
 		Type: "candidate",
 		Data: candidate,
 	})
-
 	if err != nil {
-		log.Printf("[Call %s] Error sending ICE to %s: %v", call.id, peerID, err)
+		log.Printf("[Call %s] Error sending ICE: %v", call.id, err)
 	}
 }
 
@@ -350,57 +368,58 @@ func (call *Call) Signal() {
 
 			log.Printf("[Call %s] Adding track %s to peer %s", call.id, track.ID(), peer.id)
 			if _, err := conn.AddTrack(track); err != nil {
-				log.Printf("[Call %s] Error adding track %s to peer %s: %v", call.id, track.ID(), peer.id, err)
+				log.Printf("[Call %s] Error adding track: %v", call.id, err)
 			}
 		}
 
 		if conn.SignalingState() != webrtc.SignalingStateStable {
-			log.Printf("[Call %s] Peer %s signaling state is %s; deferring offer generation",
-				call.id, peer.id, conn.SignalingState().String())
+			log.Printf("[Call %s] Peer %s signaling state is %s; skipping offer", call.id, peer.id, conn.SignalingState().String())
 			continue
 		}
 
 		offer, err := conn.CreateOffer(nil)
 		if err != nil {
-			log.Printf("[Call %s] Error creating offer for %s: %v", call.id, peer.id, err)
+			log.Printf("[Call %s] CreateOffer failed: %v", call.id, err)
 			continue
 		}
 
 		if err := conn.SetLocalDescription(offer); err != nil {
-			log.Printf("[Call %s] Error setting local description for %s: %v", call.id, peer.id, err)
+			log.Printf("[Call %s] SetLocalDescription failed: %v", call.id, err)
 			continue
 		}
+		gatherComplete := webrtc.GatheringCompletePromise(conn)
+		<-gatherComplete
+
+		localDescription := conn.LocalDescription()
+		if localDescription == nil {
+			log.Printf("[Call %s] LocalDescription is nil", call.id)
+			continue
+		}
+
+		log.Printf("[Call %s] ICE gathering complete; sending complete SDP offer", call.id)
 
 		err = peer.WriteJSON(WebsocketMessage{
 			Type: "offer",
 			Data: map[string]interface{}{
-				"type": offer.Type.String(),
-				"sdp":  offer.SDP,
+				"type": localDescription.Type.String(),
+				"sdp":  localDescription.SDP,
 			},
 		})
-
 		if err != nil {
-			log.Printf("[Call %s] Failed to send offer to %s: %v", call.id, peer.id, err)
+			log.Printf("[Call %s] Failed sending offer: %v", call.id, err)
 		}
 	}
 }
 
-func NewCoordinator() *Coordinator {
-	log.Println("[Coordinator] Init Coordinator")
-	return &Coordinator{
-		Sessions: make(map[string]*Call),
-	}
-}
-
 func (coordinator *Coordinator) RemoveUserFromCall(userID, callID string) {
-	log.Printf("[Coordinator] Attempting to remove user: %s from call: %s", userID, callID)
+	log.Printf("[Coordinator] Removing user %s from call %s", userID, callID)
 
 	coordinator.mutex.RLock()
 	call, ok := coordinator.Sessions[callID]
 	coordinator.mutex.RUnlock()
 
 	if !ok {
-		log.Printf("[Coordinator] Call session %s not found (removing user)", callID)
+		log.Printf("[Coordinator] Call %s not found", callID)
 		return
 	}
 
@@ -424,18 +443,21 @@ func (coordinator *Coordinator) AddUserToCall(userID, callID string, socket *web
 
 	conn, err := webrtc.NewPeerConnection(config)
 	if err != nil {
-		log.Printf("[Coordinator] Failed to create PeerConnection for %s: %v", userID, err)
+		log.Printf("[Coordinator] Failed to create PeerConnection: %v", err)
 		return
 	}
 
 	peer.SetPeerConnection(conn)
 	call.AddPeer(peer)
 
-	if _, err := conn.AddTransceiverFromKind(
+	_, err = conn.AddTransceiverFromKind(
 		webrtc.RTPCodecTypeAudio,
-		webrtc.RTPTransceiverInit{Direction: webrtc.RTPTransceiverDirectionRecvonly},
-	); err != nil {
-		log.Printf("[Coordinator] Failed to add audio transceiver for %s: %v", userID, err)
+		webrtc.RTPTransceiverInit{
+			Direction: webrtc.RTPTransceiverDirectionRecvonly,
+		},
+	)
+	if err != nil {
+		log.Printf("[Coordinator] Failed to add audio transceiver: %v", err)
 	}
 
 	conn.OnICEConnectionStateChange(func(state webrtc.ICEConnectionState) {
@@ -445,56 +467,47 @@ func (coordinator *Coordinator) AddUserToCall(userID, callID string, socket *web
 	conn.OnConnectionStateChange(func(state webrtc.PeerConnectionState) {
 		log.Printf("[PeerConnection %s] Connection state: %s", userID, state.String())
 		switch state {
-		case webrtc.PeerConnectionStateFailed, webrtc.PeerConnectionStateClosed:
-			call.RemovePeer(userID)
+		case webrtc.PeerConnectionStateFailed:
+			log.Printf("[PeerConnection %s] Connection Failed", userID)
+		case webrtc.PeerConnectionStateConnected:
+			log.Printf("[PeerConnection %s] Connection Success", userID)
+		case webrtc.PeerConnectionStateDisconnected:
+			log.Printf("[PeerConnection %s] disconnected", userID)
 		}
 	})
 
-	conn.OnICECandidate(func(ice *webrtc.ICECandidate) {
-		if ice == nil {
-			log.Printf("[PeerConnection %s] ICE gathering finished", userID)
-			return
-		}
-
-		log.Printf(
-			"[PeerConnection %s] local ice: %s",
-			userID,
-			ice.ToJSON().Candidate,
-		)
-
-		call.SendICE(ice, userID)
+	conn.OnICEGatheringStateChange(func(state webrtc.ICEGathererState) {
+		log.Printf("[PeerConnection %s] Ice gathering: %s", userID, state.String())
 	})
 
 	conn.OnTrack(func(trackRemote *webrtc.TrackRemote, receiver *webrtc.RTPReceiver) {
-		log.Printf("[PeerConnection %s] Received remote track ID=%s Kind=%s StreamID=%s",
-			userID, trackRemote.ID(), trackRemote.Kind().String(), trackRemote.StreamID())
+		log.Printf("[PeerConnection %s] remote track: ID=%s Kind=%s StreamID=%s", userID, trackRemote.ID(), trackRemote.Kind().String(), trackRemote.StreamID())
 
 		trackLocal := call.AddTrack(trackRemote)
 		if trackLocal == nil {
 			return
 		}
-
 		defer call.RemoveTrack(trackLocal)
 
 		buf := make([]byte, 1500)
 		for {
-			n, _, err := trackRemote.Read(buf)
-			if err != nil {
-				if err != io.EOF {
-					log.Printf("[PeerConnection %s] Track read ended with error: %v", userID, err)
+			n, _, readErr := trackRemote.Read(buf)
+			if readErr != nil {
+				if readErr != io.EOF {
+					log.Printf("[PeerConnection %s] Track read error: %v", userID, readErr)
 				}
 				return
 			}
 
-			if _, err := trackLocal.Write(buf[:n]); err != nil {
-				if err != io.EOF {
-					log.Printf("[PeerConnection %s] Track write failed: %v", userID, err)
+			if _, writeErr := trackLocal.Write(buf[:n]); writeErr != nil {
+				if writeErr != io.EOF {
+					log.Printf("[PeerConnection %s] Track write error: %v", userID, writeErr)
 				}
 				return
 			}
 		}
 	})
 
-	log.Printf("[Coordinator] Init Signal phase for %s", userID)
+	log.Printf("[Coordinator] Starting Signal phase for %s", userID)
 	call.Signal()
 }
