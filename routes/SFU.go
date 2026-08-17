@@ -333,7 +333,7 @@ func (call *Call) SendICE(message *webrtc.ICECandidate, peerID string) {
 	}
 }
 
-func (call *Call) Signal() {
+func (call *Call) Signal(senderUID string) {
 	call.mutex.RLock()
 	peers := make([]*Peer, 0, len(call.peers))
 	for _, peer := range call.peers {
@@ -349,6 +349,9 @@ func (call *Call) Signal() {
 	log.Printf("[Call %s] Signaling across %d peers for %d tracks", call.id, len(peers), len(tracks))
 
 	for _, peer := range peers {
+		if peer.id == senderUID {
+			continue
+		}
 		conn := peer.GetPeerConnection()
 		if conn == nil || conn.ConnectionState() == webrtc.PeerConnectionStateClosed {
 			continue
@@ -361,6 +364,8 @@ func (call *Call) Signal() {
 			}
 		}
 
+		added := false
+
 		for _, track := range tracks {
 			if existingTracks[track.ID()] {
 				continue
@@ -369,7 +374,12 @@ func (call *Call) Signal() {
 			log.Printf("[Call %s] Adding track %s to peer %s", call.id, track.ID(), peer.id)
 			if _, err := conn.AddTrack(track); err != nil {
 				log.Printf("[Call %s] Error adding track: %v", call.id, err)
+				continue
 			}
+			added = true
+		}
+		if !added {
+			continue
 		}
 
 		if conn.SignalingState() != webrtc.SignalingStateStable {
@@ -491,7 +501,7 @@ func (coordinator *Coordinator) AddUserToCall(userID, callID string, socket *web
 		log.Printf("[Call %s] New track %s; renegotiating", call.id, trackLocal.ID())
 
 		go func() {
-			call.Signal()
+			call.Signal(userID)
 		}()
 
 		defer call.RemoveTrack(trackLocal)
@@ -516,5 +526,5 @@ func (coordinator *Coordinator) AddUserToCall(userID, callID string, socket *web
 	})
 
 	log.Printf("[Coordinator] Starting Signal phase for %s", userID)
-	call.Signal()
+	call.Signal(userID)
 }
