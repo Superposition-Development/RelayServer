@@ -27,7 +27,8 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func registerEndpoints() {
-	http.HandleFunc("/ws", routes.HandleConnections)
+	// http.HandleFunc("/ws", routes.HandleConnections) this is han
+	http.HandleFunc("/ws", routes.StartServer().HandleConnections)
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/signup", routes.Signup)
 	http.HandleFunc("/login", routes.Login)
