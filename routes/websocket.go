@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"sync"
 
+	"time"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -55,7 +57,7 @@ func parseString(val interface{}) string {
 }
 
 type WebsocketMessage struct {
-	Type string      `json:"type"`
+	Type string      `json:"message"`
 	Data interface{} `json:"data"`
 }
 
@@ -75,6 +77,8 @@ func StartServer() *wsServer {
 
 func (ws *wsServer) HandleConnections(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
+
+	mutexWS := &MutexConn{ws: conn}
 
 	defer conn.Close()
 
@@ -126,62 +130,64 @@ func (ws *wsServer) HandleConnections(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			return
 		}
-		ws.coordinator.ObtainEvent(message, conn)
+		message.Data = data
+		message.Type = data["message"].(string)
+		ws.coordinator.ObtainEvent(message, mutexWS, userID)
 	}
 }
 
-// func handleSendMessage(data map[string]any, userID, authKey string) {
-// 	serverID := parseString(data["serverID"])
-// 	channelID := parseString(data["channelID"])
-// 	content := parseString(data["content"])
+func handleSendMessage(data map[string]any, userID, authKey string) {
+	serverID := parseString(data["serverID"])
+	channelID := parseString(data["channelID"])
+	content := parseString(data["content"])
 
-// 	messageID, err := routes.SendMessage(serverID, channelID, content, authKey)
-// 	if err != nil {
-// 		log.Printf("Error sending message: %v", err)
-// 		return
-// 	}
+	messageID, err := SendMessage(serverID, channelID, content, authKey)
+	if err != nil {
+		log.Printf("Error sending message: %v", err)
+		return
+	}
 
-// 	users, err := routes.GetServerUsers(serverID)
-// 	if err != nil {
-// 		return
-// 	}
+	users, err := GetServerUsers(serverID)
+	if err != nil {
+		return
+	}
 
-// 	senderData, err := db.QueryRow(
-// 		[]string{"pfp", "username"},
-// 		"user",
-// 		map[string]string{"userID": userID},
-// 	)
-// 	if err != nil {
-// 		log.Printf("Error fetching sender details: %v", err)
-// 	}
+	senderData, err := db.QueryRow(
+		[]string{"pfp", "username"},
+		"user",
+		map[string]string{"userID": userID},
+	)
+	if err != nil {
+		log.Printf("Error fetching sender details: %v", err)
+	}
 
-// 	outboundMsg := WebsocketMessage{
-// 		Type: "recieveMessage",
-// 		Data: map[string]any{
-// 			"id":        messageID,
-// 			"serverID":  serverID,
-// 			"channelID": channelID,
-// 			"name":      senderData["username"],
-// 			"pfp":       senderData["pfp"],
-// 			"content":   content,
-// 			"timestamp": time.Now().Unix(),
-// 		},
-// 	}
+	outboundMsg := WebsocketMessage{
+		Type: "recieveMessage",
+		Data: map[string]any{
+			"id":        messageID,
+			"serverID":  serverID,
+			"channelID": channelID,
+			"name":      senderData["username"],
+			"pfp":       senderData["pfp"],
+			"content":   content,
+			"timestamp": time.Now().Unix(),
+		},
+	}
 
-// 	mu.RLock()
-// 	defer mu.RUnlock()
+	// mu.RLock()
+	// defer mu.RUnlock()
 
-// 	for _, targetID := range users {
-// 		client, ok := clients[targetID]
-// 		if !ok {
-// 			continue
-// 		}
+	for _, targetID := range users {
+		client, ok := clients[targetID]
+		if !ok {
+			continue
+		}
 
-// 		if err := SendWebsocketMessage(client.Conn, outboundMsg); err != nil {
-// 			log.Printf("Failed to send message to  %s: %v", targetID, err)
-// 		}
-// 	}
-// }
+		if err := SendWebsocketMessage(client.Conn, outboundMsg); err != nil {
+			log.Printf("Failed to send message to  %s: %v", targetID, err)
+		}
+	}
+}
 
 func SendWebsocketMessage(mutexWS *MutexConn, msg WebsocketMessage) error {
 	log.Printf("[WS] Sending Message: type=%s data=%+v", msg.Type, msg.Data)

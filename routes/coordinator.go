@@ -117,9 +117,9 @@ func (coordinator *Coordinator) RemoveUserFromRoom(self_id string, room_id strin
 	}
 }
 
-func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *websocket.Conn) {
-	wsMessage := message
-	switch wsMessage.Type {
+func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *MutexConn, userID string) {
+	fmt.Println("im talkin bout a " + message.Type)
+	switch message.Type {
 
 	case "register":
 		// userMu.Lock()
@@ -127,22 +127,23 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *we
 		// userMu.Unlock()
 
 		// mu.Lock()
-		// clients[userID] = &Client{
-		// 	ID:   userID,
-		// 	Conn: mutexWS,
-		// }
+		clients[userID] = &Client{
+			ID:   userID,
+			Conn: socket,
+		}
 		// mu.Unlock()
 
-		// log.Printf("[WS] Registered websocket user: %s", userID)
+		log.Printf("[WS] Registered websocket user: %s", userID)
 
 	case "sendMessage":
 		m, ok := message.Data.(map[string]any)
 		if ok {
-			serverID := m["serverID"].(string)
-			channelID := m["channelID"].(string)
-			content := m["content"].(string)
-			authKey := m["authKey"].(string)
-			SendMessage(serverID, channelID, content, authKey)
+			// serverID := parseString(m["serverID"])
+			// channelID := parseString(m["channelID"])
+			// content := parseString(m["content"])
+			// authKey := parseString(m["authKey"])
+			// SendMessage(serverID, channelID, content, authKey)
+			handleSendMessage(m, userID, parseString(m["authKey"]))
 		}
 
 	case "joinRoom":
@@ -151,7 +152,7 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *we
 			if ok {
 				self_id := m["self_id"].(string)
 				room_id := m["room_id"].(string)
-				coordinator.AddUserToRoom(self_id, room_id, socket)
+				coordinator.AddUserToRoom(self_id, room_id, socket.ws)
 			}
 		}()
 	case "leaveRoom":
@@ -242,7 +243,7 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *we
 		}()
 	default:
 		fmt.Println("DEFAULT")
-		fmt.Println(wsMessage)
+		fmt.Println(message)
 
 	}
 }
