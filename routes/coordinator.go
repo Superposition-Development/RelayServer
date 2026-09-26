@@ -12,43 +12,43 @@ import (
 )
 
 type Lobby interface {
-	CreateRoom(id string)
-	RemoveRoom(id string)
-	AddUserToRoom(self_id string, room_id string, socket *websocket.Conn)
-	RemoveUserFromRoom(self_id string, room_id string, socket *websocket.Conn)
+	CreateCall(id string)
+	RemoveCall(id string)
+	AddUserToCall(userID string, callID string, socket *websocket.Conn)
+	RemoveUserFromCall(userID string, callID string, socket *websocket.Conn)
 	ShowSessions()
 	ObtainEvent(message WebsocketMessage, socket *websocket.Conn)
 }
 
 type Coordinator struct {
-	sessioins map[string]*Room
+	sessions map[string]*Call
 }
 
 func NewCoordinator() *Coordinator {
-	return &Coordinator{sessioins: map[string]*Room{}}
+	return &Coordinator{sessions: map[string]*Call{}}
 }
 
-func (coordinator *Coordinator) ShowSessions() map[string]*Room {
-	return coordinator.sessioins
+func (coordinator *Coordinator) ShowSessions() map[string]*Call {
+	return coordinator.sessions
 }
 
-func (coordinator *Coordinator) CreateRoom(id string) {
-	coordinator.sessioins[id] = NewRoom(id)
+func (coordinator *Coordinator) CreateCall(id string) {
+	coordinator.sessions[id] = NewCall(id)
 }
 
-func (coordinator *Coordinator) RemoveRoom(id string) {
-	delete(coordinator.sessioins, id)
+func (coordinator *Coordinator) RemoveCall(id string) {
+	delete(coordinator.sessions, id)
 }
 
-func (coordinator *Coordinator) AddUserToRoom(self_id string, room_id string, socket *websocket.Conn) {
-	if _, ok := coordinator.sessioins[room_id]; !ok {
-		fmt.Println("New Room was created: ", room_id)
-		coordinator.CreateRoom(room_id)
+func (coordinator *Coordinator) AddUserToCall(userID string, callID string, socket *websocket.Conn) {
+	if _, ok := coordinator.sessions[callID]; !ok {
+		fmt.Println("New call was created: ", callID)
+		coordinator.CreateCall(callID)
 	}
-	if room, ok := coordinator.sessioins[room_id]; ok {
-		room.AddPeer(newPeer(self_id))
-		fmt.Println("Peer ", self_id, "was added to room ", room_id)
-		if peer, ok := room.peers[self_id]; ok {
+	if call, ok := coordinator.sessions[callID]; ok {
+		call.AddPeer(newPeer(userID))
+		fmt.Println("Peer ", userID, "was added to call ", callID)
+		if peer, ok := call.peers[userID]; ok {
 			peer.SetSocket(socket)
 
 			conn, err := webrtc.NewPeerConnection(webrtc.Configuration{})
@@ -74,7 +74,7 @@ func (coordinator *Coordinator) AddUserToRoom(self_id string, room_id string, so
 						log.Print(err)
 					}
 				case webrtc.PeerConnectionStateClosed:
-					room.Signal()
+					call.Signal()
 				default:
 				}
 			})
@@ -85,14 +85,14 @@ func (coordinator *Coordinator) AddUserToRoom(self_id string, room_id string, so
 					return
 				}
 				fmt.Println("Ice: ", i)
-				room.SendICE(i, self_id)
+				call.SendICE(i, userID)
 			})
 
 			peer.connection.OnTrack(func(t *webrtc.TrackRemote, _ *webrtc.RTPReceiver) {
-				fmt.Println("Track added from peer: ", self_id)
-				defer room.Signal()
-				trackLocal := room.AddTrack(t)
-				defer room.RemoveTrack(trackLocal)
+				fmt.Println("Track added from peer: ", userID)
+				defer call.Signal()
+				trackLocal := call.AddTrack(t)
+				defer call.RemoveTrack(trackLocal)
 				defer fmt.Println("Track", trackLocal, "was removed")
 				buf := make([]byte, 1500)
 				for {
@@ -111,9 +111,9 @@ func (coordinator *Coordinator) AddUserToRoom(self_id string, room_id string, so
 	}
 }
 
-func (coordinator *Coordinator) RemoveUserFromRoom(self_id string, room_id string) {
-	if room, ok := coordinator.sessioins[room_id]; ok {
-		delete(room.peers, self_id)
+func (coordinator *Coordinator) RemoveUserFromCall(userID string, callID string) {
+	if call, ok := coordinator.sessions[callID]; ok {
+		delete(call.peers, userID)
 	}
 }
 
@@ -146,39 +146,39 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 			handleSendMessage(m, userID, parseString(m["authKey"]))
 		}
 
-	case "joinRoom":
+	case "joinCall":
 		go func() {
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				self_id := m["self_id"].(string)
-				room_id := m["room_id"].(string)
-				coordinator.AddUserToRoom(self_id, room_id, socket.ws)
+				userID := m["userID"].(string)
+				callID := m["callID"].(string)
+				coordinator.AddUserToCall(userID, callID, socket.ws)
 			}
 		}()
-	case "leaveRoom":
+	case "leaveCall":
 		go func() {
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				self_id := m["self_id"].(string)
-				room_id := m["room_id"].(string)
-				coordinator.RemoveUserFromRoom(self_id, room_id)
+				userID := m["userID"].(string)
+				callID := m["callID"].(string)
+				coordinator.RemoveUserFromCall(userID, callID)
 			}
 		}()
 	case "offer":
 		go func() {
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				self_id, _ := m["self_id"].(string)
-				room_id, _ := m["room_id"].(string)
+				userID, _ := m["userID"].(string)
+				callID, _ := m["callID"].(string)
 				offer2 := m["offer"].(map[string]any)
-				if room, ok := coordinator.sessioins[room_id]; ok {
-					if peer, ok := room.peers[self_id]; ok {
+				if call, ok := coordinator.sessions[callID]; ok {
+					if peer, ok := call.peers[userID]; ok {
 						answer, err2 := peer.ReactOnOffer(offer2["sdp"].(string))
 						if err2 != nil {
 							fmt.Println(err2)
 							return
 						}
-						room.SendAnswer(answer, self_id)
+						call.SendAnswer(answer, userID)
 					}
 				}
 			}
@@ -187,11 +187,11 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 		go func() {
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				self_id, _ := m["self_id"].(string)
-				room_id, _ := m["room_id"].(string)
+				userID, _ := m["userID"].(string)
+				callID, _ := m["callID"].(string)
 				offer2 := m["answer"].(map[string]any)
-				if room, ok := coordinator.sessioins[room_id]; ok {
-					if peer, ok := room.peers[self_id]; ok {
+				if call, ok := coordinator.sessions[callID]; ok {
+					if peer, ok := call.peers[userID]; ok {
 						err := peer.ReactOnAnswer(offer2["sdp"].(string))
 						if err != nil {
 							fmt.Println(err)
@@ -207,8 +207,8 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 			//m, ok := message.Data.(CANDIDATE)
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				self_id, _ := m["self_id"].(string)
-				room_id, _ := m["room_id"].(string)
+				userID, _ := m["userID"].(string)
+				callID, _ := m["callID"].(string)
 				candidate := m["candidate"].(map[string]any)
 				i_candidate := candidate["candidate"].(string)
 				sdp_mid := candidate["sdpMid"].(string)
@@ -225,8 +225,8 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 					SDPMLineIndex:    &sdp_m_line_index,
 					UsernameFragment: &username_fragment,
 				}
-				if room, ok := coordinator.sessioins[room_id]; ok {
-					if peer, ok := room.peers[self_id]; ok {
+				if call, ok := coordinator.sessions[callID]; ok {
+					if peer, ok := call.peers[userID]; ok {
 						if err := peer.connection.AddICECandidate(init); err != nil {
 							log.Println(err)
 							return
