@@ -79,18 +79,6 @@ func CreateDM(w http.ResponseWriter, r *http.Request) {
 // 	return len(servers) == 0
 // }
 
-func GetDMUsers(dmID string) ([]string, error) {
-	userMap, err := db.Query([]string{"userA", "userB"}, "dm", "id", []string{dmID})
-	if err != nil {
-		return nil, err
-	}
-	var userIDs []string
-	for _, value := range userMap {
-		userIDs = append(userIDs, fmt.Sprintf("%v", value["userID"]))
-	}
-	return userIDs, nil
-}
-
 func GetDMs(w http.ResponseWriter, r *http.Request) {
 	user, err := db.AuthHeaderValidation(r)
 	if err != nil {
@@ -100,28 +88,14 @@ func GetDMs(w http.ResponseWriter, r *http.Request) {
 	var rawUserID interface{} = user["userID"]
 	userID := fmt.Sprintf("%v", rawUserID) //cooked
 
-	dmIDs, err := db.Query([]string{"id", "userA", "userB"}, "dm", "userID", []string{userID})
+	dms, err := db.GetDMsQuery(userID)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	reformattedDMIDs := []string{}
-
-	for i := 0; i < len(dmIDs); i++ {
-		var dmID interface{} = dmIDs[i]["serverID"]
-		reformattedDMIDs = append(reformattedDMIDs, fmt.Sprintf("%v", dmID))
-	}
-
-	servers, err := db.Query([]string{"id", "pfp", "name"}, "dmID", "id", reformattedDMIDs)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(servers)
+	err = json.NewEncoder(w).Encode(dms)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
