@@ -48,7 +48,7 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 		"timestamp": time.Now().Unix(),
 	}
 
-	serverID, err := db.AddRowWithIDReturn(serverData, "server")
+	serverID, err := db.AddRowWithIDReturn(serverData, "dm")
 	if err != nil {
 		//do something
 	}

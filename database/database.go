@@ -38,6 +38,39 @@ func InitializeDB() {
 	fmt.Println("Relay DB Initialized")
 }
 
+func GetDMsQuery(userID string) (map[string]any, error) {
+	db, err := sql.Open("sqlite3", ServerConfig.DatabaseName+".db")
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	query := `
+    SELECT id, userA, userB
+    FROM dm
+    WHERE userA = ? OR userB = ?`
+
+	rows, err := db.Query(query, userID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	resultMap := make(map[string]any)
+	for rows.Next() {
+		var id, userA, userB string
+
+		err := rows.Scan(&id, &userA, &userB)
+		if err != nil {
+			return nil, err
+		}
+		resultMap[id] = []string{userA, userB}
+
+		// fmt.Println(id, userA, userB)
+	}
+	return resultMap, nil
+}
+
 // SELECT returnValues FROM tableName WHERE map[key] = map[value] -> (column,input)
 func QueryRow(returnValues []string, tableName string, whereMap map[string]string) (map[string]any, error) {
 	formattedReturnValues := strings.Join(returnValues, ", ")
