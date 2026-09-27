@@ -150,7 +150,6 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 		go func() {
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				userID := m["userID"].(string)
 				callID := m["callID"].(string)
 				coordinator.AddUserToCall(userID, callID, socket.ws)
 			}
@@ -159,7 +158,6 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 		go func() {
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				userID := m["userID"].(string)
 				callID := m["callID"].(string)
 				coordinator.RemoveUserFromCall(userID, callID)
 			}
@@ -168,7 +166,6 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 		go func() {
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				userID, _ := m["userID"].(string)
 				callID, _ := m["callID"].(string)
 				offer2 := m["offer"].(map[string]any)
 				if call, ok := coordinator.sessions[callID]; ok {
@@ -187,7 +184,6 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 		go func() {
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				userID, _ := m["userID"].(string)
 				callID, _ := m["callID"].(string)
 				offer2 := m["answer"].(map[string]any)
 				if call, ok := coordinator.sessions[callID]; ok {
@@ -207,7 +203,6 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 			//m, ok := message.Data.(CANDIDATE)
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				userID, _ := m["userID"].(string)
 				callID, _ := m["callID"].(string)
 				candidate := m["candidate"].(map[string]any)
 				i_candidate := candidate["candidate"].(string)
