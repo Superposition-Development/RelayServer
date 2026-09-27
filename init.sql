@@ -42,13 +42,13 @@ CREATE TABLE IF NOT EXISTS serverUser (
     );
 
 CREATE TABLE IF NOT EXISTS dm (
-    id INTEGER, PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     textID INTEGER,
     voiceID INTEGER,
     userA TEXT,
     userB TEXT,
     FOREIGN KEY (textID) REFERENCES channel(textID),
     FOREIGN KEY (voiceID) REFERENCES channel(voiceID),
-    FOREIGN KEY (userA) references user(userA),
-    FOREIGN KEY (userB) references user(userB),
-)
+    FOREIGN KEY (userA) REFERENCES user(userA),
+    FOREIGN KEY (userB) REFERENCES user(userB)
+);
