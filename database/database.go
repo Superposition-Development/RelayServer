@@ -39,7 +39,7 @@ func InitializeDB() {
 }
 
 func GetDMsQuery(userID string) (map[string]any, error) {
-	db, err := sql.Open("sqlite3", ServerConfig.DatabaseName+".db")
+	db, err := sql.Open("sqlite", ServerConfig.DatabaseName+".db")
 	if err != nil {
 		return nil, err
 	}

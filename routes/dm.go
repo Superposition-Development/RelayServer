@@ -51,10 +51,10 @@ func CreateDM(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dmData := map[string]any{
-		"textID":    textID,
-		"voiceID":   voiceID,
-		"userOneID": userID,
-		"userTwoID": data.TargetID,
+		"textID":  textID,
+		"voiceID": voiceID,
+		"userA":   userID,
+		"userB":   data.TargetID,
 	}
 
 	_, err = db.AddRowWithIDReturn(dmData, "dm")
@@ -62,10 +62,10 @@ func CreateDM(w http.ResponseWriter, r *http.Request) {
 		//do something
 	}
 
-	SendWebsocketMessage(clients[userID].Conn, WebsocketMessage{
-		Type: "newChannel",
-		Data: map[string]any{},
-	})
+	// SendWebsocketMessage(clients[userID].Conn, WebsocketMessage{
+	// 	Type: "newChannel",
+	// 	Data: map[string]any{},
+	// })
 
 	fmt.Fprintf(w, "created server")
 }
