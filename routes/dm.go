@@ -70,15 +70,6 @@ func CreateDM(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "created server")
 }
 
-// func UserInDM(dmID string, userID string) bool {
-// 	queryMap := map[string]string{
-// 		"userID": userID,
-// 	}
-// 	servers, err := db.QueryRow([]string{"dmID"}, "dm", queryMap)
-// 	fmt.Println(err)
-// 	return len(servers) == 0
-// }
-
 func GetDMs(w http.ResponseWriter, r *http.Request) {
 	user, err := db.AuthHeaderValidation(r)
 	if err != nil {

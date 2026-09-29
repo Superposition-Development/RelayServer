@@ -135,7 +135,18 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 
 		log.Printf("[WS] Registered websocket user: %s", userID)
 
-	case "sendMessage":
+	case "sendMessageServer":
+		m, ok := message.Data.(map[string]any)
+		if ok {
+			// serverID := parseString(m["serverID"])
+			// channelID := parseString(m["channelID"])
+			// content := parseString(m["content"])
+			// authKey := parseString(m["authKey"])
+			// SendMessage(serverID, channelID, content, authKey)
+			handleSendMessage(m, userID, parseString(m["authKey"]))
+		}
+
+	case "sendMessageDM":
 		m, ok := message.Data.(map[string]any)
 		if ok {
 			// serverID := parseString(m["serverID"])

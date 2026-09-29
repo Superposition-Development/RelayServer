@@ -38,6 +38,73 @@ func InitializeDB() {
 	fmt.Println("Relay DB Initialized")
 }
 
+// func UserInDMQuery(userID string, dmID string) (bool, error) {
+// 	db, err := sql.Open("sqlite", ServerConfig.DatabaseName+".db")
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	defer db.Close()
+
+// 	query := `
+//     SELECT id
+//     FROM dm
+//     WHERE (userA = ? OR userB = ?) AND id = ?`
+
+// 	rows, err := db.Query(query, userID, userID, dmID)
+// 	if err != nil {
+// 		return false, err
+// 	}
+
+// 	// avalue := make([]any, len(returnValues))
+// 	// valuePtr := make([]any, len(returnValues))
+
+// 	// value := make(any)
+
+// 	row := db.QueryRow(query)
+
+// 	valuePtr = &value
+
+// 	for i := range values {
+// 		valuePtrs[i] = &values[i]
+// 	}
+
+// 	err = row.Scan(valuePtr)
+// 	if err == sql.ErrNoRows {
+// 		fmt.Println("FAH it has no rows")
+// 		return nil, nil
+// 	}
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return nil, err
+// 	}
+// }
+
+func UsersInDM(userID string, dmID string) ([]string, error) {
+	db, err := sql.Open("sqlite", ServerConfig.DatabaseName+".db")
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	query := `
+		SELECT id, userA, userB
+		FROM dm
+		WHERE (userA = ? OR userB = ?) AND id = ?`
+
+	var id, userA, userB string
+
+	err = db.QueryRow(query, userID, userID, dmID).Scan(&id, &userA, &userB)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return []string{id, userA, userB}, nil
+}
+
 func GetDMsQuery(userID string) (map[string]any, error) {
 	db, err := sql.Open("sqlite", ServerConfig.DatabaseName+".db")
 	if err != nil {

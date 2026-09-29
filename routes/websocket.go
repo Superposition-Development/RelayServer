@@ -138,18 +138,47 @@ func (ws *wsServer) HandleConnections(w http.ResponseWriter, r *http.Request) {
 
 func handleSendMessage(data map[string]any, userID, authKey string) {
 	serverID := parseString(data["serverID"])
+	dmID := parseString(data["dmID"])
 	channelID := parseString(data["channelID"])
 	content := parseString(data["content"])
 
-	messageID, err := SendMessage(serverID, channelID, content, authKey)
-	if err != nil {
-		log.Printf("Error sending message: %v", err)
-		return
-	}
+	websocketProtocol := ""
+	serverOrDMDiscriminator := ""
+	serverOrDMDiscriminatorVal := ""
 
-	users, err := GetServerUsers(serverID)
-	if err != nil {
-		return
+	messageID := ""
+	users := make([]string, 0)
+
+	if serverID != "" {
+		temp, err := SendMessageServer(serverID, channelID, content, authKey)
+		if err != nil {
+			log.Printf("Error sending message: %v", err)
+			return
+		}
+		messageID = temp
+		users, err = GetServerUsers(serverID)
+		if err != nil {
+			return
+		}
+		websocketProtocol = "recieveMessageServer"
+		serverOrDMDiscriminator = "serverID"
+		serverOrDMDiscriminatorVal = serverID
+	}
+	if dmID != "" {
+		temp, err := SendMessageDM(dmID, channelID, content, authKey)
+		if err != nil {
+			log.Printf("Error sending message: %v", err)
+			return
+		}
+		messageID = temp
+		users, err = db.UsersInDM(userID, dmID)
+		if err != nil {
+			return
+		}
+		users = users[1:] // new slice without first el
+		websocketProtocol = "recieveMessageDM"
+		serverOrDMDiscriminator = "dmID"
+		serverOrDMDiscriminatorVal = dmID
 	}
 
 	senderData, err := db.QueryRow(
@@ -162,15 +191,15 @@ func handleSendMessage(data map[string]any, userID, authKey string) {
 	}
 
 	outboundMsg := WebsocketMessage{
-		Type: "recieveMessage",
+		Type: websocketProtocol,
 		Data: map[string]any{
-			"id":        messageID,
-			"serverID":  serverID,
-			"channelID": channelID,
-			"name":      senderData["username"],
-			"pfp":       senderData["pfp"],
-			"content":   content,
-			"timestamp": time.Now().Unix(),
+			"id":                    messageID,
+			serverOrDMDiscriminator: serverOrDMDiscriminatorVal,
+			"channelID":             channelID,
+			"name":                  senderData["username"],
+			"pfp":                   senderData["pfp"],
+			"content":               content,
+			"timestamp":             time.Now().Unix(),
 		},
 	}
 

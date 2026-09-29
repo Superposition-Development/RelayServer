@@ -22,7 +22,7 @@ type GetChannelMessageRequest struct {
 	Ascending string `json:"ascending"`
 }
 
-func SendMessage(serverID string, channelID string, content string, JWT string) (string, error) {
+func SendMessageServer(serverID string, channelID string, content string, JWT string) (string, error) {
 
 	user, err := db.AuthValidation(JWT)
 	if err != nil {
@@ -34,6 +34,35 @@ func SendMessage(serverID string, channelID string, content string, JWT string) 
 
 	if !UserInServer(serverID, userID) {
 		//FAH
+	}
+
+	newMessage := map[string]any{
+		"channelID": channelID,
+		"userID":    userID,
+		"timestamp": time.Now().Unix(),
+		"content":   content,
+	}
+	return db.AddRowWithIDReturn(newMessage, "message")
+}
+
+func SendMessageDM(dmID string, channelID string, content string, JWT string) (string, error) {
+
+	user, err := db.AuthValidation(JWT)
+	if err != nil {
+		//do something
+	}
+
+	var rawUserID interface{} = user["userID"]
+	userID := fmt.Sprintf("%v", rawUserID) //cooked
+
+	userInDM, err := db.UsersInDM(dmID, userID)
+
+	if err != nil {
+		//do smth about it
+	}
+
+	if userInDM == nil {
+		return "no users this will break it but LT", nil
 	}
 
 	newMessage := map[string]any{
