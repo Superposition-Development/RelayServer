@@ -28,6 +28,7 @@ func CreateServerUser(serverID string, userID string) {
 }
 
 func CreateServer(w http.ResponseWriter, r *http.Request) {
+	// fmt.Println("attempt was made")
 	var data CreateServerRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
@@ -48,7 +49,7 @@ func CreateServer(w http.ResponseWriter, r *http.Request) {
 		"timestamp": time.Now().Unix(),
 	}
 
-	serverID, err := db.AddRowWithIDReturn(serverData, "dm")
+	serverID, err := db.AddRowWithIDReturn(serverData, "server")
 	if err != nil {
 		//do something
 	}

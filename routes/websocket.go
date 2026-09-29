@@ -1,8 +1,6 @@
 package routes
 
 import (
-	// "RelayServer/SFU"
-	// "RelayServer/SFU"
 	db "RelayServer/database"
 	"encoding/json"
 	"fmt"
@@ -124,12 +122,6 @@ func (ws *wsServer) HandleConnections(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		if err != nil {
-			fmt.Println("DROP")
-			fmt.Println(message.Data)
-			fmt.Println(err)
-			return
-		}
 		message.Data = data
 		message.Type = data["message"].(string)
 		ws.coordinator.ObtainEvent(message, mutexWS, userID)
