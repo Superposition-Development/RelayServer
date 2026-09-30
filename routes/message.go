@@ -14,10 +14,17 @@ import (
 // 	Content   string `json:"content"`
 // }
 
-type GetChannelMessageRequest struct {
+type GetChannelMessageServerRequest struct {
 	MoreThan  string `json:"moreThan"`
 	ChannelID string `json:"channelID"`
 	ServerID  string `json:"serverID"`
+	MessageID string `json:"messageID"`
+	Ascending string `json:"ascending"`
+}
+
+type GetChannelMessageDMRequest struct {
+	MoreThan  string `json:"moreThan"`
+	DMID      string `json:"dmID"`
 	MessageID string `json:"messageID"`
 	Ascending string `json:"ascending"`
 }
@@ -74,8 +81,8 @@ func SendMessageDM(dmID string, channelID string, content string, JWT string) (s
 	return db.AddRowWithIDReturn(newMessage, "message")
 }
 
-func GetChannelMessage(w http.ResponseWriter, r *http.Request) {
-	var data GetChannelMessageRequest
+func GetChannelMessageServer(w http.ResponseWriter, r *http.Request) {
+	var data GetChannelMessageServerRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
@@ -131,5 +138,65 @@ func GetChannelMessage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func GetChannelMessageDM(w http.ResponseWriter, r *http.Request) {
+	// var data GetChannelMessageDMRequest
+	// err := json.NewDecoder(r.Body).Decode(&data)
+	// if err != nil {
+	// 	http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
+	// 	return
+	// }
+	// user, err := db.AuthHeaderValidation(r)
+	// if err != nil {
+	// 	//do something
+	// }
+
+	// var rawUserID interface{} = user["userID"]
+	// userID := fmt.Sprintf("%v", rawUserID) //cooked
+
+	// users, err := db.UsersInDM(userID, data.DMID)
+	// if len(users) == 0 {
+	// 	//FAH
+	// }
+
+	// messages, err := db.PaginatedQuery([]string{"userID", "content", "id", "timestamp"}, "message", "channelID", data.ChannelID, "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", db.ServerConfig.MaxMessagesPerQuery)
+	// userContentMap := make(map[string]map[string]any)
+
+	// for _, message := range messages {
+	// 	var rawUserID interface{} = message["userID"]
+	// 	userID := fmt.Sprintf("%v", rawUserID) //cooked
+	// 	_, ok := userContentMap[userID]
+	// 	if ok {
+	// 		message["pfp"] = userContentMap[userID]["pfp"]
+	// 		message["name"] = userContentMap[userID]["name"]
+	// 	} else {
+	// 		userContentMap[userID] = make(map[string]any)
+	// 		queryMap := map[string]string{
+	// 			"userID": userID,
+	// 		}
+	// 		userData, err := db.QueryRow([]string{"pfp", "username"}, "user", queryMap)
+	// 		if err != nil {
+	// 			// fmt.Println(err)
+	// 		}
+	// 		userContentMap[userID]["pfp"] = userData["pfp"]
+	// 		userContentMap[userID]["name"] = userData["username"]
+	// 		message["pfp"] = userData["pfp"]
+	// 		message["name"] = userData["username"]
+	// 	}
+	// }
+
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// w.Header().Set("Content-Type", "application/json")
+
+	// err = json.NewEncoder(w).Encode(messages)
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 
 }
