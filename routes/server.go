@@ -64,7 +64,7 @@ func UserInServer(serverID string, userID string) bool {
 	}
 	servers, err := db.QueryRow([]string{"serverID"}, "serverUser", queryMap)
 	fmt.Println(err)
-	return len(servers) == 0
+	return len(servers) != 0
 }
 
 func GetServerUsers(serverID string) ([]string, error) {
