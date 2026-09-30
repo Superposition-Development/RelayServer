@@ -41,6 +41,7 @@ func registerEndpoints() {
 	http.HandleFunc("/joinServer", routes.JoinServer)
 	http.HandleFunc("/createDM", routes.CreateDM)
 	http.HandleFunc("/getDMs", routes.GetDMs)
+	http.HandleFunc("/getServerUsers", routes.GetServerUsersEndpoint)
 }
 
 func main() {

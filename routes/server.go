@@ -79,6 +79,41 @@ func GetServerUsers(serverID string) ([]string, error) {
 	return userIDs, nil
 }
 
+func GetServerUsersEndpoint(w http.ResponseWriter, r *http.Request) {
+	var data JoinServerRequest //reusing a naming scheme because i am lazy
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := db.AuthHeaderValidation(r)
+	if err != nil {
+		//do something
+	}
+
+	var rawUserID interface{} = user["userID"]
+	userID := fmt.Sprintf("%v", rawUserID) //cooked
+
+	if !UserInServer(data.ServerID, userID) {
+		return
+	}
+
+	userIDs, err := GetServerUsers(data.ServerID)
+
+	if err != nil {
+
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(userIDs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func JoinServer(w http.ResponseWriter, r *http.Request) {
 	var data JoinServerRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
