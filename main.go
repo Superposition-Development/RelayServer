@@ -52,7 +52,7 @@ func main() {
 
 	fmt.Println("Relay Server active on port 8080")
 	handler := enableCORS(http.DefaultServeMux)
-	err := http.ListenAndServe("[::1]:8080", handler)
+	err := http.ListenAndServe(":8080", handler) //[::1]:8080
 	if err != nil {
 		//lowk what do we even do here
 	}
