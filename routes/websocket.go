@@ -167,7 +167,9 @@ func handleSendMessage(data map[string]any, userID, authKey string) {
 		if err != nil {
 			return
 		}
+		channelID = users[3]
 		users = users[1:] // new slice without first el
+		users = users[:2]
 		websocketProtocol = "recieveMessageDM"
 		serverOrDMDiscriminator = "dmID"
 		serverOrDMDiscriminatorVal = dmID

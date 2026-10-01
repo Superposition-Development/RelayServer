@@ -62,11 +62,13 @@ func SendMessageDM(dmID string, content string, JWT string) (string, error) {
 	var rawUserID interface{} = user["userID"]
 	userID := fmt.Sprintf("%v", rawUserID) //cooked
 
-	userInDM, err := db.UsersInDM(dmID, userID)
+	userInDM, err := db.UsersInDM(userID, dmID)
 
 	if err != nil {
 		//do smth about it
 	}
+
+	// fmt.Println(db.UsersInDM(useri))
 
 	if userInDM == nil {
 		return "no users this will break it but LT", nil
@@ -155,12 +157,25 @@ func GetChannelMessageDM(w http.ResponseWriter, r *http.Request) {
 	var rawUserID interface{} = user["userID"]
 	userID := fmt.Sprintf("%v", rawUserID) //cooked
 
+	fmt.Println(data)
+
 	users, err := db.UsersInDM(userID, data.DMID)
-	if len(users) == 0 {
-		//FAH
+	if err != nil {
+		fmt.Println(err)
 	}
+	if len(users) == 0 {
+		// fmt.Println(users)
+		// http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// fmt.Println(users)
+	// fmt.Println(users[3])
 
 	messages, err := db.PaginatedQuery([]string{"userID", "content", "id", "timestamp"}, "message", "channelID", users[3], "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", db.ServerConfig.MaxMessagesPerQuery)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	userContentMap := make(map[string]map[string]any)
 
 	for _, message := range messages {
@@ -186,10 +201,10 @@ func GetChannelMessageDM(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 
 	w.Header().Set("Content-Type", "application/json")
 
