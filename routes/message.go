@@ -52,7 +52,7 @@ func SendMessageServer(serverID string, channelID string, content string, JWT st
 	return db.AddRowWithIDReturn(newMessage, "message")
 }
 
-func SendMessageDM(dmID string, channelID string, content string, JWT string) (string, error) {
+func SendMessageDM(dmID string, content string, JWT string) (string, error) {
 
 	user, err := db.AuthValidation(JWT)
 	if err != nil {
@@ -73,7 +73,7 @@ func SendMessageDM(dmID string, channelID string, content string, JWT string) (s
 	}
 
 	newMessage := map[string]any{
-		"channelID": channelID,
+		"channelID": userInDM[3],
 		"userID":    userID,
 		"timestamp": time.Now().Unix(),
 		"content":   content,
@@ -141,62 +141,62 @@ func GetChannelMessageServer(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetChannelMessageDM(w http.ResponseWriter, r *http.Request) {
-	// var data GetChannelMessageDMRequest
-	// err := json.NewDecoder(r.Body).Decode(&data)
-	// if err != nil {
-	// 	http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
-	// 	return
-	// }
-	// user, err := db.AuthHeaderValidation(r)
-	// if err != nil {
-	// 	//do something
-	// }
+	var data GetChannelMessageDMRequest
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
+		return
+	}
+	user, err := db.AuthHeaderValidation(r)
+	if err != nil {
+		//do something
+	}
 
-	// var rawUserID interface{} = user["userID"]
-	// userID := fmt.Sprintf("%v", rawUserID) //cooked
+	var rawUserID interface{} = user["userID"]
+	userID := fmt.Sprintf("%v", rawUserID) //cooked
 
-	// users, err := db.UsersInDM(userID, data.DMID)
-	// if len(users) == 0 {
-	// 	//FAH
-	// }
+	users, err := db.UsersInDM(userID, data.DMID)
+	if len(users) == 0 {
+		//FAH
+	}
 
-	// messages, err := db.PaginatedQuery([]string{"userID", "content", "id", "timestamp"}, "message", "channelID", data.ChannelID, "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", db.ServerConfig.MaxMessagesPerQuery)
-	// userContentMap := make(map[string]map[string]any)
+	messages, err := db.PaginatedQuery([]string{"userID", "content", "id", "timestamp"}, "message", "channelID", users[3], "id", data.MoreThan == "true", data.MessageID, data.Ascending == "true", db.ServerConfig.MaxMessagesPerQuery)
+	userContentMap := make(map[string]map[string]any)
 
-	// for _, message := range messages {
-	// 	var rawUserID interface{} = message["userID"]
-	// 	userID := fmt.Sprintf("%v", rawUserID) //cooked
-	// 	_, ok := userContentMap[userID]
-	// 	if ok {
-	// 		message["pfp"] = userContentMap[userID]["pfp"]
-	// 		message["name"] = userContentMap[userID]["name"]
-	// 	} else {
-	// 		userContentMap[userID] = make(map[string]any)
-	// 		queryMap := map[string]string{
-	// 			"userID": userID,
-	// 		}
-	// 		userData, err := db.QueryRow([]string{"pfp", "username"}, "user", queryMap)
-	// 		if err != nil {
-	// 			// fmt.Println(err)
-	// 		}
-	// 		userContentMap[userID]["pfp"] = userData["pfp"]
-	// 		userContentMap[userID]["name"] = userData["username"]
-	// 		message["pfp"] = userData["pfp"]
-	// 		message["name"] = userData["username"]
-	// 	}
-	// }
+	for _, message := range messages {
+		var rawUserID interface{} = message["userID"]
+		userID := fmt.Sprintf("%v", rawUserID) //cooked
+		_, ok := userContentMap[userID]
+		if ok {
+			message["pfp"] = userContentMap[userID]["pfp"]
+			message["name"] = userContentMap[userID]["name"]
+		} else {
+			userContentMap[userID] = make(map[string]any)
+			queryMap := map[string]string{
+				"userID": userID,
+			}
+			userData, err := db.QueryRow([]string{"pfp", "username"}, "user", queryMap)
+			if err != nil {
+				// fmt.Println(err)
+			}
+			userContentMap[userID]["pfp"] = userData["pfp"]
+			userContentMap[userID]["name"] = userData["username"]
+			message["pfp"] = userData["pfp"]
+			message["name"] = userData["username"]
+		}
+	}
 
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
-	// err = json.NewEncoder(w).Encode(messages)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	err = json.NewEncoder(w).Encode(messages)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 }

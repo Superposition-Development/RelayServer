@@ -157,7 +157,7 @@ func handleSendMessage(data map[string]any, userID, authKey string) {
 		serverOrDMDiscriminatorVal = serverID
 	}
 	if dmID != "" {
-		temp, err := SendMessageDM(dmID, channelID, content, authKey)
+		temp, err := SendMessageDM(dmID, content, authKey)
 		if err != nil {
 			log.Printf("Error sending message: %v", err)
 			return

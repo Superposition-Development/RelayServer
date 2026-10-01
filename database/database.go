@@ -87,13 +87,13 @@ func UsersInDM(userID string, dmID string) ([]string, error) {
 	defer db.Close()
 
 	query := `
-		SELECT id, userA, userB
+		SELECT id, userA, userB, textID
 		FROM dm
 		WHERE (userA = ? OR userB = ?) AND id = ?`
 
-	var id, userA, userB string
+	var id, userA, userB, textID string
 
-	err = db.QueryRow(query, userID, userID, dmID).Scan(&id, &userA, &userB)
+	err = db.QueryRow(query, userID, userID, dmID).Scan(&id, &userA, &userB, &textID)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -102,7 +102,7 @@ func UsersInDM(userID string, dmID string) ([]string, error) {
 		return nil, err
 	}
 
-	return []string{id, userA, userB}, nil
+	return []string{id, userA, userB, textID}, nil
 }
 
 func GetDMsQuery(userID string) (map[string]any, error) {
