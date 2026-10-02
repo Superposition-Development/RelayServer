@@ -118,7 +118,7 @@ func (coordinator *Coordinator) RemoveUserFromCall(userID string, callID string)
 }
 
 func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *MutexConn, userID string) {
-	fmt.Println("im talkin bout a " + message.Type)
+	fmt.Println("Message: " + message.Type)
 	switch message.Type {
 
 	case "register":
@@ -157,14 +157,14 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 			handleSendMessage(m, userID, parseString(m["authKey"]))
 		}
 
-	case "joinCall":
-		go func() {
-			m, ok := message.Data.(map[string]any)
-			if ok {
-				callID := m["callID"].(string)
-				coordinator.AddUserToCall(userID, callID, socket.ws)
-			}
-		}()
+	// case "joinCall":
+	// 	go func() {
+	// 		m, ok := message.Data.(map[string]any)
+	// 		if ok {
+	// 			callID := m["callID"].(string)
+	// 			coordinator.AddUserToCall(userID, callID, socket.ws)
+	// 		}
+	// 	}()
 	case "leaveCall":
 		go func() {
 			m, ok := message.Data.(map[string]any)
@@ -173,11 +173,13 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 				coordinator.RemoveUserFromCall(userID, callID)
 			}
 		}()
-	case "offer":
+	case "joinCall":
 		go func() {
 			m, ok := message.Data.(map[string]any)
 			if ok {
-				callID, _ := m["callID"].(string)
+				callID := m["callID"].(string)
+				coordinator.AddUserToCall(userID, callID, socket.ws)
+				fmt.Println(m)
 				offer2 := m["offer"].(map[string]any)
 				if call, ok := coordinator.sessions[callID]; ok {
 					if peer, ok := call.peers[userID]; ok {
@@ -209,7 +211,7 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 				}
 			}
 		}()
-	case "ice-candidate":
+	case "candidate":
 		go func() {
 			//m, ok := message.Data.(CANDIDATE)
 			m, ok := message.Data.(map[string]any)
@@ -244,7 +246,6 @@ func (coordinator *Coordinator) ObtainEvent(message WebsocketMessage, socket *Mu
 				}
 			} else {
 				fmt.Println(m)
-				fmt.Println("nach")
 			}
 		}()
 	default:
