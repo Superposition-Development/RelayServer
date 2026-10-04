@@ -55,7 +55,7 @@ func parseString(val interface{}) string {
 }
 
 type WebsocketMessage struct {
-	Type string      `json:"message"`
+	Type string      `json:"type"`
 	Data interface{} `json:"data"`
 }
 
@@ -123,7 +123,7 @@ func (ws *wsServer) HandleConnections(w http.ResponseWriter, r *http.Request) {
 		}
 
 		message.Data = data
-		message.Type = data["message"].(string)
+		message.Type = data["type"].(string)
 		ws.coordinator.ObtainEvent(message, mutexWS, userID)
 	}
 }
