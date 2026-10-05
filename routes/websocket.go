@@ -216,3 +216,8 @@ func SendWebsocketMessage(mutexWS *MutexConn, msg WebsocketMessage) error {
 	log.Printf("[WS] Sending Message: type=%s data=%+v", msg.Type, msg.Data)
 	return mutexWS.WriteJSON(msg)
 }
+
+func SendWebsocketMessagePeer(ws *websocket.Conn, msg WebsocketMessage) error {
+	log.Printf("[WS] Sending Peer Message: type=%s data=%+v", msg.Type, msg.Data)
+	return ws.WriteJSON(msg)
+}
