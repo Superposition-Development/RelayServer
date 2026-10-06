@@ -16,12 +16,28 @@ type Lobby interface {
 	ObtainEvent(message WebsocketMessage, socket *MutexConn, userID string)
 }
 
+//	var config = webrtc.Configuration{
+//		ICEServers: []webrtc.ICEServer{
+//			{
+//				URLs: []string{
+//					"[2001:4860:4864:5:8000::1]:19302",
+//				},
+//			},
+//		},
+//	}
 var config = webrtc.Configuration{
 	ICEServers: []webrtc.ICEServer{
-		{URLs: []string{"stun:stun.l.google.com:19302"}},
-		{URLs: []string{"stun:stun1.l.google.com:19302"}},
-		{URLs: []string{"stun:stun2.l.google.com:19302"}},
+		{
+			URLs: []string{
+				"turn:global.relay.metered.ca:80",
+				// "turn:global.relay.metered.ca:443",
+				// "turn:global.relay.metered.ca:443?transport=tcp",
+			},
+			Username:   "a072cb146b471d7876e641dc",
+			Credential: "AbV/kjuHbgOurcxl",
+		},
 	},
+	// ICETransportPolicy: webrtc.ICETransportPolicyRelay,
 }
 
 type Coordinator struct {
