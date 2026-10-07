@@ -41,9 +41,9 @@ type Lobby interface {
 // }
 
 var config = webrtc.Configuration{
-	ICEServers: []webrtc.ICEServer{
-		{URLs: []string{"stun:stun.l.google.com:19302"}},
-	},
+	// ICEServers: []webrtc.ICEServer{
+	// 	{URLs: []string{"stun:stun.l.google.com:19302"}},
+	// },
 }
 
 type Coordinator struct {
