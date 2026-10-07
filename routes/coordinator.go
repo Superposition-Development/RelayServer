@@ -25,27 +25,27 @@ type Lobby interface {
 //			},
 //		},
 //	}
-// var config = webrtc.Configuration{
-// 	ICEServers: []webrtc.ICEServer{
-// 		{
-// 			URLs: []string{
-// 				// "turn:global.relay.metered.ca:80",
-// 				// "turn:global.relay.metered.ca:443",
-// 				"turn:global.relay.metered.ca:443?transport=tcp",
-// 			},
-// 			Username:   "c1bea89d980d944a146c66a3",
-// 			Credential: "RbBZdljmQEoTFBC+",
-// 		},
-// 	},
-// 	// ICETransportPolicy: webrtc.ICETransportPolicyRelay,
-// }
-
 var config = webrtc.Configuration{
-	// ICEServers: []webrtc.ICEServer{
-	// 	{URLs: []string{"stun:stun.l.google.com:19302"}},
-	// },
+	ICEServers: []webrtc.ICEServer{
+		{
+			URLs: []string{
+				"turn:global.relay.metered.ca:80",
+				"turn:global.relay.metered.ca:443",
+				"turn:global.relay.metered.ca:443?transport=tcp",
+			},
+			Username:   "c1bea89d980d944a146c66a3",
+			Credential: "RbBZdljmQEoTFBC+",
+		},
+	},
 	ICETransportPolicy: webrtc.ICETransportPolicyRelay,
 }
+
+// var config = webrtc.Configuration{
+// ICEServers: []webrtc.ICEServer{
+// 	{URLs: []string{"stun:stun.l.google.com:19302"}},
+// },
+// ICETransportPolicy: webrtc.ICETransportPolicyRelay,
+// }
 
 type Coordinator struct {
 	sessions map[string]*Call
